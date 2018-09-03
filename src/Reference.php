@@ -8,7 +8,7 @@ namespace Simply\Database;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class Relation
+class Reference
 {
     private $schema;
     private $fields;
@@ -48,7 +48,7 @@ class Relation
         return (string) $value === (string) $referencedValue;
     }
 
-    public function isSingleRelation(): bool
+    public function isSingleRelationship(): bool
     {
         return array_diff($this->referencedSchema->getPrimaryKeys(), $this->referencedFields) === [];
     }

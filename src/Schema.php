@@ -23,7 +23,7 @@ class Schema
 
     protected $fields;
 
-    protected $relations;
+    protected $references;
 
     public function __construct(ContainerInterface $container)
     {
@@ -45,17 +45,17 @@ class Schema
         return $this->fields;
     }
 
-    public function getRelation(string $name): Relation
+    public function getReference(string $name): Reference
     {
-        if (!isset($this->relations[$name])) {
-            throw new \InvalidArgumentException("Invalid relation '$name'");
+        if (!isset($this->references[$name])) {
+            throw new \InvalidArgumentException("Invalid reference '$name'");
         }
 
-        return new Relation(
+        return new Reference(
             $this,
-            $this->relations[$name]['key'],
-            $this->getSchema($this->relations[$name]['schema']),
-            $this->relations[$name]['references']
+            $this->references[$name]['keys'],
+            $this->getSchema($this->references[$name]['schema']),
+            $this->references[$name]['fields']
         );
     }
 

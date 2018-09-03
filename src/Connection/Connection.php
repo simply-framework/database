@@ -14,7 +14,6 @@ interface Connection
     public const ORDER_DESCENDING = 2;
 
     public function getConnection(): \PDO;
-    public function getLastInsertId();
     public function insert(string $table, array $values, string & $primaryKey = null): \PDOStatement;
     public function select(array $fields, string $table, array $where, array $orderBy = [], int $limit = null): \PDOStatement;
     public function update(string $table, array $values, array $where): \PDOStatement;

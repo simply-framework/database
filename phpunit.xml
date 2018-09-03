@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php">
+    <testsuites>
+        <testsuite name="Default">
+            <directory suffix="Test.php">tests/tests/</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">src/</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <env name="phpunit_mysql_hostname" value="localhost" />
+        <env name="phpunit_mysql_database" value="phpunit_tests" />
+        <env name="phpunit_mysql_username" value="root" />
+        <env name="phpunit_mysql_password" value="toor" />
+    </php>
+</phpunit>

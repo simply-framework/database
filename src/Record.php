@@ -10,11 +10,17 @@ namespace Simply\Database;
  */
 class Record implements \ArrayAccess
 {
+    public const STATE_INSERT = 1;
+    public const STATE_UPDATE = 2;
+    public const STATE_DELETE = 3;
+
     private $schema;
 
     private $values;
 
-    private $new;
+    private $changed;
+
+    private $state;
 
     private $relations;
 
@@ -22,12 +28,29 @@ class Record implements \ArrayAccess
     {
         $this->schema = $schema;
         $this->values = array_fill_keys($schema->getFields(), null);
-        $this->new = true;
+        $this->state = self::STATE_INSERT;
+        $this->changed = [];
+    }
+
+    public function getPrimaryKeys(): array
+    {
+        return array_intersect_key($this->values, array_flip($this->schema->getPrimaryKeys()));
     }
 
     public function isNew(): bool
     {
-        return $this->new;
+        return $this->state === self::STATE_INSERT;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->state === self::STATE_DELETE;
+    }
+
+    public function updateState(int $state): void
+    {
+        $this->state = $state === self::STATE_DELETE ? self::STATE_DELETE : self::STATE_UPDATE;
+        $this->changed = [];
     }
 
     public function getSchema(): Schema
@@ -40,7 +63,7 @@ class Record implements \ArrayAccess
         return $this->schema->getModel($this);
     }
 
-    public function getRelation(string $name): array
+    public function getReference(string $name): array
     {
         if (!isset($this->relations[$name])) {
             throw new \RuntimeException("Cannot access relation '$name' that has not been provided");
@@ -49,9 +72,9 @@ class Record implements \ArrayAccess
         return $this->relations[$name];
     }
 
-    public function setRelation(string $name, array $records): void
+    public function fillReference(string $name, array $records): void
     {
-        $relation = $this->getSchema()->getRelation($name);
+        $relation = $this->getSchema()->getReference($name);
 
         foreach ($records as $record) {
             if ($this->isRelated($relation, $record)) {
@@ -59,18 +82,16 @@ class Record implements \ArrayAccess
             }
         }
 
-        if (\count($records) > 1 && $relation->isSingleRelation()) {
-            throw new \InvalidArgumentException('The relation cannot reference more than a single record');
+        if (\count($records) > 1 && $relation->isSingleRelationship()) {
+            throw new \InvalidArgumentException('The relationship cannot reference more than a single record');
         }
 
         $this->relations[$name] = array_values($records);
     }
 
-    private function isRelated(Relation $relation, Record $record): bool
+    private function isRelated(Reference $relation, Record $record): bool
     {
-        $schema = $relation->getReferencedSchema();
-
-        if ($schema !== $record->getSchema() && \get_class($schema) !== \get_class($record->getSchema())) {
+        if ($relation->getReferencedSchema() !== $record->getSchema()) {
             return false;
         }
 
@@ -93,12 +114,18 @@ class Record implements \ArrayAccess
         }
 
         $this->values = $row;
-        $this->new = false;
+        $this->state = self::STATE_UPDATE;
+        $this->changed = [];
     }
 
     public function getDatabaseValues(): array
     {
         return $this->values;
+    }
+
+    public function getChangedFields(): array
+    {
+        return array_keys($this->changed);
     }
 
     public function offsetExists($offset)
@@ -121,7 +148,12 @@ class Record implements \ArrayAccess
             throw new \InvalidArgumentException("Invalid record field '$offset'");
         }
 
+        if ($this->state === self::STATE_UPDATE && \in_array($offset, $this->schema->getPrimaryKeys(), true)) {
+            throw new \RuntimeException('Cannot change values of primary keys for saved records');
+        }
+
         $this->values[$offset] = $value;
+        $this->changed[$offset] = true;
     }
 
     public function offsetUnset($offset)

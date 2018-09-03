@@ -53,7 +53,7 @@ class Repository
 
     protected function findByPrimaryKey(Schema $schema, $values): ?Model
     {
-        $this->findOne($schema, $this->getPrimaryKeyCondition($schema, $values));
+        return $this->findOne($schema, $this->getPrimaryKeyCondition($schema, $values));
     }
 
     protected function getPrimaryKeyCondition(Schema $schema, $values)
@@ -65,13 +65,13 @@ class Repository
             $values = [$values];
         }
 
-        if (array_keys($values) === range(0, \count($keys))) {
+        if (array_keys($values) === range(0, \count($keys) - 1)) {
             $values = array_combine($keys, $values);
         }
 
         foreach ($keys as $key) {
             if (!isset($values[$key])) {
-                throw new \InvalidArgumentException('No value provided for primary key');
+                throw new \InvalidArgumentException('Missing value for a primary key');
             }
 
             if (\is_array($values[$key])) {
@@ -84,9 +84,15 @@ class Repository
         return $condition;
     }
 
-    protected function save(Model $model)
+    protected function save(Model $model): void
     {
-        if ($model->getDatabaseRecord()->isNew()) {
+        $record = $model->getDatabaseRecord();
+
+        if ($record->isDeleted()) {
+            throw new \RuntimeException('Tried to save a record that has already been deleted');
+        }
+
+        if ($record->isNew()) {
             $this->insert($model);
             return;
         }
@@ -109,34 +115,42 @@ class Repository
                 unset($values[$primary]);
 
                 $this->connection->insert($schema->getTable(), $values, $primary);
-                $record[reset(($primaryKeys))] = $primary;
+                $record[reset($primaryKeys)] = $primary;
+                $record->updateState(Record::STATE_INSERT);
                 return;
             }
         }
 
         $this->connection->insert($schema->getTable(), $values);
+        $record->updateState(Record::STATE_INSERT);
     }
 
     protected function update(Model $model)
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
+        $values = array_intersect_key($record->getDatabaseValues(), array_flip($record->getChangedFields()));
 
-        $values = $record->getDatabaseValues();
-        $condition = $this->getPrimaryKeyCondition($schema, $values);
-        $values = array_diff_key($values, $condition);
-
-        $this->connection->update($schema->getTable(), $values, $condition);
+        $this->connection->update($schema->getTable(), $values, $record->getPrimaryKeys());
+        $record->updateState(Record::STATE_UPDATE);
     }
 
-    protected function remove(Model $model)
+    protected function delete(Model $model)
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
 
-        $this->connection->delete(
-            $schema->getTable(),
-            $this->getPrimaryKeyCondition($schema, $record->getDatabaseValues())
-        );
+        $this->connection->delete($schema->getTable(), $record->getPrimaryKeys());
+        $record->updateState(Record::STATE_DELETE);
+    }
+
+    /**
+     * @param Record[] $records
+     * @param string[] $references
+     */
+    protected function fillReferences(array $records, array $references): void
+    {
+        $filler = new ReferenceFiller($this->connection);
+        $filler->fill($records, $references);
     }
 }

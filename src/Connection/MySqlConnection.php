@@ -10,22 +10,21 @@ namespace Simply\Database\Connection;
  */
 class MySqlConnection implements Connection
 {
-    private $initializer;
+    private $lazyLoader;
     private $pdo;
 
-    public function __construct($hostname, $database, $username, $password)
+    public function __construct(string $hostname, string $database, string $username, string $password)
     {
-        $this->lastId = false;
-        $this->initializer = function () use ($hostname, $database, $username, $password) {
+        $this->lazyLoader = function () use ($hostname, $database, $username, $password): \PDO {
             return new \PDO($this->getDataSource($hostname, $database), $username, $password, [
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                 \PDO::ATTR_EMULATE_PREPARES => false,
-                \PDO::MYSQL_ATTR_INIT_COMMAND => sprintf("SET timezone = '%s'", date('P')),
+                \PDO::MYSQL_ATTR_INIT_COMMAND => sprintf("SET time_zone = '%s'", date('P')),
             ]);
         };
     }
 
-    private function getDataSource($hostname, $database)
+    private function getDataSource(string $hostname, string $database): string
     {
         if (strncmp($hostname, '/', 1) === 0) {
             return sprintf('mysql:unix_socket=%s;dbname=%s;charset=utf8mb4', $hostname, $database);
@@ -43,7 +42,7 @@ class MySqlConnection implements Connection
     public function getConnection(): \PDO
     {
         if (!$this->pdo) {
-            $this->pdo = ($this->initializer)();
+            $this->pdo = ($this->lazyLoader)();
         }
 
         return $this->pdo;
@@ -165,7 +164,7 @@ class MySqlConnection implements Connection
 
     private function formatParameters(array $values, array & $parameters): string
     {
-        array_push($parameters, ... array_values($parameters));
+        array_push($parameters, ... array_values($values));
         return sprintf('(%s)', implode(', ', array_fill(0, \count($values), '?')));
     }
 

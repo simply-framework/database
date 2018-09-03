@@ -17,7 +17,8 @@
   ],
   "require": {
     "php": "^7.2",
-    "psr/container": "^1.0"
+    "psr/container": "^1.0",
+    "ext-pdo": "*"
   },
   "require-dev": {
     "simply/container": "^0.2.1",
@@ -32,7 +33,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Simply\\Database\\": "tests/tests/"
+      "Simply\\Database\\": "tests/tests/",
+      "Simply\\Database\\Test\\": "tests/helpers/"
     }
   }
 }
