@@ -84,7 +84,7 @@ class Schema
         foreach ($this->getFields() as $field) {
             $prefixed = $prefix . $field;
 
-            if (isset($row[$prefixed])) {
+            if (array_key_exists($prefixed, $row)) {
                 $values[$field] = $row[$prefixed];
             }
         }

@@ -32,6 +32,46 @@ class TestPersonRepository extends Repository
         return $this->findByPrimaryKey($this->schema, $id);
     }
 
+    public function findByFirstName(string $name): array
+    {
+        return $this->find($this->schema, ['first_name' => $name]);
+    }
+
+    public function findByAnyFirstName(iterable $names): array
+    {
+        return $this->find($this->schema, ['first_name' => array_map(function (string $name): string {
+            return $name;
+        }, $names)]);
+    }
+
+    public function findByLastName(string $name): array
+    {
+        return $this->find($this->schema, ['last_name' => $name]);
+    }
+
+    public function findAllAlphabetically(int $limit = null, bool $ascending = true): array
+    {
+        $order = $ascending ? Connection::ORDER_ASCENDING : Connection::ORDER_DESCENDING;
+        return $this->find($this->schema, [], ['last_name' => $order], $limit);
+    }
+
+    public function findOneByWeight(?float $weight): ?TestPersonModel
+    {
+        return $this->findOne($this->schema, ['weight' => $weight]);
+    }
+
+    public function findByAnyWeight(array $weights): array
+    {
+        return $this->find($this->schema, ['weight' => array_map(function (?float $weight): ?float {
+            return $weight;
+        }, $weights)]);
+    }
+
+    public function findByHasLicense(bool $hasLicense): array
+    {
+        return $this->find($this->schema, ['license' => $hasLicense]);
+    }
+
     public function savePerson(TestPersonModel $model): void
     {
         $this->save($model);

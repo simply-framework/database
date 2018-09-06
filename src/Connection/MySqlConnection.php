@@ -70,7 +70,7 @@ class MySqlConnection implements Connection
         return $this->query($this->formatQuery([
             'SELECT' => $this->formatFields($fields),
             'FROM' => $this->formatTable($table),
-            'WHERE' => $this->formatConditions($where, $parameters),
+            'WHERE' => $where ? $this->formatConditions($where, $parameters) : '',
             'ORDER BY' => $this->formatOrder($orderBy),
             'LIMIT' => $orderBy ? $this->formatLimit($limit, $parameters) : '',
         ]), $parameters);

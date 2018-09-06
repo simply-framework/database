@@ -19,6 +19,7 @@ class TestPersonModel extends Model
         $record['first_name'] = $firstName;
         $record['last_name'] = $lastName;
         $record['age'] = $age;
+        $record['license'] = false;
 
         parent::__construct($record);
     }
@@ -43,8 +44,23 @@ class TestPersonModel extends Model
         return $this->record['age'];
     }
 
+    public function getWeight(): ?float
+    {
+        return $this->record['weight'];
+    }
+
     public function increaseAge(): void
     {
         $this->record['age'] = $this->getAge() + 1;
+    }
+
+    public function setWeight(float $weight): void
+    {
+        $this->record['weight'] = $weight;
+    }
+
+    public function giveLicense(): void
+    {
+        $this->record['license'] = true;
     }
 }

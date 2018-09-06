@@ -31,10 +31,12 @@ class MySqlIntegrationTest extends IntegrationTestCase
         $pdo->exec(sprintf('DROP TABLE IF EXISTS `%s`', $this->personSchema->getTable()));
         $pdo->exec(sprintf(<<<'SQL'
 CREATE TABLE `%s` (
-  `id` INT PRIMARY KEY AUTO_INCREMENT,
-  `first_name` TEXT,
-  `last_name` TEXT,
-  `age` INT
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `first_name` TEXT NOT NULL,
+  `last_name` TEXT NOT NULL,
+  `age` INT NOT NULL,
+  `weight` DECIMAL(5,2) NULL,
+  `license` BOOL DEFAULT FALSE
 )
 SQL
         , $this->personSchema->getTable()));

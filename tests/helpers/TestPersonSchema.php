@@ -18,7 +18,7 @@ class TestPersonSchema extends Schema
 
     protected $primaryKeys = ['id'];
 
-    protected $fields = ['id', 'first_name', 'last_name', 'age'];
+    protected $fields = ['id', 'first_name', 'last_name', 'age', 'weight', 'license'];
 
     protected $references;
 }
