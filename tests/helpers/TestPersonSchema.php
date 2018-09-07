@@ -20,5 +20,16 @@ class TestPersonSchema extends Schema
 
     protected $fields = ['id', 'first_name', 'last_name', 'age', 'weight', 'license'];
 
-    protected $references;
+    protected $references = [
+        'parents' => [
+            'keys' => ['id'],
+            'schema' => TestParentSchema::class,
+            'fields' => ['child_id'],
+        ],
+        'children' => [
+            'keys' => ['id'],
+            'schema' => TestParentSchema::class,
+            'fields' => ['parent_id'],
+        ],
+    ];
 }

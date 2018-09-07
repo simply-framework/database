@@ -63,4 +63,26 @@ class TestPersonModel extends Model
     {
         $this->record['license'] = true;
     }
+
+    public function getParents(): array
+    {
+        $parents = [];
+
+        foreach ($this->record->getReference('parents') as $relationship) {
+            $parents[] = $relationship->getReference('parent')[0]->getModel();
+        }
+
+        return $parents;
+    }
+
+    public function getChildren(): array
+    {
+        $children = [];
+
+        foreach ($this->record->getReference('children') as $relationship) {
+            $children[] = $relationship->getReference('child')[0]->getModel();
+        }
+
+        return $children;
+    }
 }

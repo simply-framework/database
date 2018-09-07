@@ -26,11 +26,16 @@ class MySqlIntegrationTest extends IntegrationTestCase
 
     protected function setUpDatabase(Connection $connection): void
     {
-        $pdo = $connection->getConnection();
+        $queries = [];
 
-        $pdo->exec(sprintf('DROP TABLE IF EXISTS `%s`', $this->personSchema->getTable()));
-        $pdo->exec(sprintf(<<<'SQL'
-CREATE TABLE `%s` (
+        $personTable = $this->personSchema->getTable();
+        $parentTable = $this->parentSchema->getTable();
+
+        $queries[] = "DROP TABLE IF EXISTS `$parentTable`";
+        $queries[] = "DROP TABLE IF EXISTS `$personTable`";
+
+        $queries[] = <<<SQL
+CREATE TABLE `$personTable` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `first_name` TEXT NOT NULL,
   `last_name` TEXT NOT NULL,
@@ -38,7 +43,22 @@ CREATE TABLE `%s` (
   `weight` DECIMAL(5,2) NULL,
   `license` BOOL DEFAULT FALSE
 )
-SQL
-        , $this->personSchema->getTable()));
+SQL;
+
+        $queries[] = <<<SQL
+CREATE TABLE `$parentTable` (
+  `parent_id` INT NOT NULL,
+  `child_id` INT NOT NULL,
+  CONSTRAINT PRIMARY KEY (`parent_id`, `child_id`),
+  CONSTRAINT FOREIGN KEY (`parent_id`) REFERENCES `$personTable` (`id`),
+  CONSTRAINT FOREIGN KEY (`child_id`) REFERENCES `$personTable` (`id`)
+)
+SQL;
+
+        $pdo = $connection->getConnection();
+
+        foreach ($queries as $query) {
+            $pdo->exec($query);
+        }
     }
 }

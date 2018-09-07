@@ -63,6 +63,10 @@ class Record implements \ArrayAccess
         return $this->schema->getModel($this);
     }
 
+    /**
+     * @param string $name
+     * @return Record[]
+     */
     public function getReference(string $name): array
     {
         if (!isset($this->relations[$name])) {
@@ -77,7 +81,7 @@ class Record implements \ArrayAccess
         $relation = $this->getSchema()->getReference($name);
 
         foreach ($records as $record) {
-            if ($this->isRelated($relation, $record)) {
+            if (!$this->isRelated($relation, $record)) {
                 throw new \InvalidArgumentException('The provided records are not related to this record');
             }
         }

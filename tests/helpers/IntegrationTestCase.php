@@ -20,23 +20,34 @@ abstract class IntegrationTestCase extends TestCase
     /** @var TestPersonSchema */
     protected $personSchema;
 
+    /** @var TestParentSchema */
+    protected $parentSchema;
+
     abstract protected function createConnection(): Connection;
     abstract protected function setUpDatabase(Connection $connection): void;
 
     protected function setUp()
     {
         $container = new Container();
+
         $this->personSchema = new TestPersonSchema($container);
+        $this->parentSchema = new TestParentSchema($container);
 
         $container[TestPersonSchema::class] = $this->personSchema;
+        $container[TestParentSchema::class] = $this->parentSchema;
 
         $this->connection = $this->createConnection();
         $this->setUpDatabase($this->connection);
     }
 
+    private function getTestPersonRepository(): TestPersonRepository
+    {
+        return new TestPersonRepository($this->connection, $this->personSchema, $this->parentSchema);
+    }
+
     public function testCrudOperations(): void
     {
-        $repository = new TestPersonRepository($this->connection, $this->personSchema);
+        $repository = $this->getTestPersonRepository();
 
         $person = $repository->createPerson('Jane', 'Doe', 20);
         $repository->savePerson($person);
@@ -61,7 +72,7 @@ abstract class IntegrationTestCase extends TestCase
 
     public function testFindMultiple(): void
     {
-        $repository = new TestPersonRepository($this->connection, $this->personSchema);
+        $repository = $this->getTestPersonRepository();
 
         $repository->savePerson($repository->createPerson('John', 'Doe', 20));
         $repository->savePerson($repository->createPerson('Jane', 'Doe', 20));
@@ -75,7 +86,7 @@ abstract class IntegrationTestCase extends TestCase
 
     public function testOrderedLimits(): void
     {
-        $repository = new TestPersonRepository($this->connection, $this->personSchema);
+        $repository = $this->getTestPersonRepository();
 
         $repository->savePerson($repository->createPerson('Elizabeth', 'Jones', 35));
         $repository->savePerson($repository->createPerson('Carmen', 'Martinez', 47));
@@ -111,7 +122,7 @@ abstract class IntegrationTestCase extends TestCase
 
     public function testDecimalNulls(): void
     {
-        $repository = new TestPersonRepository($this->connection, $this->personSchema);
+        $repository = $this->getTestPersonRepository();
 
         $jane = $repository->createPerson('Jane', 'Doe', 20);
         $jane->setWeight(72.1);
@@ -132,7 +143,7 @@ abstract class IntegrationTestCase extends TestCase
 
     public function testBooleanFields(): void
     {
-        $repository = new TestPersonRepository($this->connection, $this->personSchema);
+        $repository = $this->getTestPersonRepository();
 
         $repository->savePerson($repository->createPerson('Jane', 'Doe', 20));
 
@@ -148,5 +159,38 @@ abstract class IntegrationTestCase extends TestCase
 
         $this->assertCount(1, $repository->findByHasLicense(true));
         $this->assertCount(0, $repository->findByHasLicense(false));
+    }
+
+    public function testLoadingReferences(): void
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $jane = $repository->createPerson('Jane', 'Doe', 20);
+        $john = $repository->createPerson('John', 'Doe', 20);
+        $mama = $repository->createPerson('Mama', 'Doe', 40);
+        $papa = $repository->createPerson('Papa', 'Doe', 40);
+
+        $repository->savePerson($jane);
+        $repository->savePerson($john);
+        $repository->savePerson($mama);
+        $repository->savePerson($papa);
+
+        $repository->makeParent($jane, $mama);
+        $repository->makeParent($jane, $papa);
+        $repository->makeParent($john, $mama);
+        $repository->makeParent($john, $papa);
+
+        $person = $repository->findByFirstName('John')[0];
+
+        $repository->loadFamily([$person]);
+
+        $firstName = function (TestPersonModel $model): string {
+            return $model->getFirstName();
+        };
+
+        $names = array_map($firstName, $person->getParents());
+        sort($names);
+
+        $this->assertSame(['Mama', 'Papa'], $names);
     }
 }

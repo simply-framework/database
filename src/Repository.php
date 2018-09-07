@@ -145,11 +145,15 @@ class Repository
     }
 
     /**
-     * @param Record[] $records
+     * @param Model[] $models
      * @param string[] $references
      */
-    protected function fillReferences(array $records, array $references): void
+    protected function fillReferences(array $models, array $references): void
     {
+        $records = array_map(function (Model $model): Record {
+            return $model->getDatabaseRecord();
+        }, array_values($models));
+
         $filler = new ReferenceFiller($this->connection);
         $filler->fill($records, $references);
     }
