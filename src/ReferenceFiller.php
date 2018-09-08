@@ -39,8 +39,7 @@ class ReferenceFiller
                 throw new \InvalidArgumentException('The provided list of records did not share the same schema');
             }
 
-            $recordId = $this->getRecordId($schema, $record->getDatabaseValues());
-            $this->cache[$schemaId][$recordId] = $record;
+            $this->cacheRecord($schemaId, $record);
         }
 
         $this->fillReferences($records, $references);
@@ -65,21 +64,43 @@ class ReferenceFiller
                 throw new \RuntimeException('Filling references for composite foreign keys is not supported');
             }
 
+            $isPrimaryReference = $fields === $parent->getPrimaryKeys();
             $key = array_pop($keys);
             $field = array_pop($fields);
             $options = [];
-
-            foreach ($records as $record) {
-                $options[] = $record[$key];
-            }
-
-            $result = $this->connection->select($parent->getFields(), $parent->getTable(), [$field => $options]);
-            $result->setFetchMode(\PDO::FETCH_ASSOC);
             $sorted = [];
 
-            foreach ($result as $row) {
-                $record = $this->getCachedRecord($schemaId, $parent, $row);
-                $sorted[$record[$field]][] = $record;
+            foreach ($records as $record) {
+                $value = $record[$key];
+
+                if ($record->isReferenceLoaded($name)) {
+                    $sorted[$value] = $record->getReference($name);
+
+                    foreach ($sorted[$value] as $referencedRecord) {
+                        $this->cacheRecord($schemaId, $referencedRecord);
+                    }
+
+                    continue;
+                }
+
+                if ($isPrimaryReference && isset($this->cache[$schemaId][$value])) {
+                    $sorted[$value] = [$this->cache[$schemaId][$value]];
+                    continue;
+                }
+
+                $options[$value] = true;
+            }
+
+            $options = array_keys(array_diff_key($options, $sorted));
+
+            if ($options) {
+                $result = $this->connection->select($parent->getFields(), $parent->getTable(), [$field => $options]);
+                $result->setFetchMode(\PDO::FETCH_ASSOC);
+
+                foreach ($result as $row) {
+                    $record = $this->getCachedRecord($schemaId, $parent, $row);
+                    $sorted[$record[$field]][] = $record;
+                }
             }
 
             foreach ($records as $record) {
@@ -111,9 +132,21 @@ class ReferenceFiller
         return $subReferences;
     }
 
+    private function cacheRecord(string $schemaId, Record $record): void
+    {
+        $recordId = implode('-', $record->getPrimaryKeys());
+        $this->cache[$schemaId][$recordId] = $record;
+    }
+
     private function getCachedRecord(string $schemaId, Schema $schema, array $row): Record
     {
-        $recordId = $this->getRecordId($schema, $row);
+        $primaryKey = [];
+
+        foreach ($schema->getPrimaryKeys() as $key) {
+            $primaryKey[] = $row[$key];
+        }
+
+        $recordId = implode('-', $primaryKey);
 
         if (isset($this->cache[$schemaId][$recordId])) {
             return $this->cache[$schemaId][$recordId];
@@ -127,20 +160,5 @@ class ReferenceFiller
     private function getSchemaId(Schema $schema): string
     {
         return spl_object_hash($schema);
-    }
-
-    private function getRecordId(Schema $schema, array $row)
-    {
-        $values = [];
-
-        foreach ($schema->getPrimaryKeys() as $key) {
-            if (!isset($row[$key])) {
-                throw new \RuntimeException('Cannot determine cache id for record');
-            }
-
-            $values[] = $row[$key];
-        }
-
-        return implode('-', $values);
     }
 }

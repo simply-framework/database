@@ -34,7 +34,13 @@ class Record implements \ArrayAccess
 
     public function getPrimaryKeys(): array
     {
-        return array_intersect_key($this->values, array_flip($this->schema->getPrimaryKeys()));
+        $primaryKey = [];
+
+        foreach ($this->schema->getPrimaryKeys() as $key) {
+            $primaryKey[$key] = $this->values[$key];
+        }
+
+        return $primaryKey;
     }
 
     public function isNew(): bool
@@ -91,6 +97,11 @@ class Record implements \ArrayAccess
         }
 
         $this->relations[$name] = array_values($records);
+    }
+
+    public function isReferenceLoaded(string $name): bool
+    {
+        return isset($this->relations[$name]);
     }
 
     private function isRelated(Reference $relation, Record $record): bool
