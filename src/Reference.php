@@ -14,13 +14,23 @@ class Reference
     private $fields;
     private $referencedSchema;
     private $referencedFields;
+    private $primaryRelation;
 
     public function __construct(Schema $schema, array $fields, Schema $referencedSchema, array $referencedFields)
     {
+        $formatStrings = function (string ... $strings): array {
+            return $strings;
+        };
+
         $this->schema = $schema;
-        $this->fields = $fields;
+        $this->fields = $formatStrings(... $fields);
         $this->referencedSchema = $referencedSchema;
-        $this->referencedFields = $referencedFields;
+        $this->referencedFields = $formatStrings(... $referencedFields);
+        $this->primaryRelation = array_diff($this->referencedSchema->getPrimaryKey(), $this->referencedFields) === [];
+
+        if (empty($this->fields) || \count($this->fields) !== \count($this->referencedFields)) {
+            throw new \InvalidArgumentException('Unexpected list of fields in relationship');
+        }
     }
 
     public function getSchema(): Schema
@@ -43,13 +53,8 @@ class Reference
         return $this->referencedFields;
     }
 
-    public function matchValues($value, $referencedValue): bool
-    {
-        return (string) $value === (string) $referencedValue;
-    }
-
     public function isSingleRelationship(): bool
     {
-        return array_diff($this->referencedSchema->getPrimaryKeys(), $this->referencedFields) === [];
+        return $this->primaryRelation;
     }
 }

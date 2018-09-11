@@ -188,9 +188,27 @@ abstract class IntegrationTestCase extends TestCase
             return $model->getFirstName();
         };
 
-        $names = array_map($firstName, $person->getParents());
+        $childRecords = function (TestPersonModel $model): array {
+            $childRecords = [];
+
+            foreach ($model->getChildren() as $child) {
+                $childRecords[] = $child->getDatabaseRecord();
+            }
+
+            return $childRecords;
+        };
+
+        $parents = $person->getParents();
+
+        $this->assertCount(2, $parents);
+
+        $names = array_map($firstName, $parents);
         sort($names);
 
         $this->assertSame(['Mama', 'Papa'], $names);
+
+        foreach ($parents as $parent) {
+            $this->assertTrue(\in_array($person->getDatabaseRecord(), $childRecords($parent), true));
+        }
     }
 }

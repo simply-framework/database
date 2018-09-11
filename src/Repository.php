@@ -35,7 +35,7 @@ class Repository
 
     protected function findOne(Schema $schema, array $conditions): ?Model
     {
-        $keys = $schema->getPrimaryKeys();
+        $keys = $schema->getPrimaryKey();
 
         if ($keys) {
             $order = array_fill_keys($keys, Connection::ORDER_ASCENDING);
@@ -58,7 +58,7 @@ class Repository
 
     protected function getPrimaryKeyCondition(Schema $schema, $values)
     {
-        $keys = $schema->getPrimaryKeys();
+        $keys = $schema->getPrimaryKey();
         $condition = [];
 
         if (!\is_array($values)) {
@@ -106,7 +106,7 @@ class Repository
         $schema = $record->getSchema();
         $values = $record->getDatabaseValues();
 
-        $primaryKeys = $schema->getPrimaryKeys();
+        $primaryKeys = $schema->getPrimaryKey();
 
         if (\count($primaryKeys) === 1) {
             $primary = reset($primaryKeys);
@@ -131,7 +131,7 @@ class Repository
         $schema = $record->getSchema();
         $values = array_intersect_key($record->getDatabaseValues(), array_flip($record->getChangedFields()));
 
-        $this->connection->update($schema->getTable(), $values, $record->getPrimaryKeys());
+        $this->connection->update($schema->getTable(), $values, $record->getPrimaryKey());
         $record->updateState(Record::STATE_UPDATE);
     }
 
@@ -140,7 +140,7 @@ class Repository
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
 
-        $this->connection->delete($schema->getTable(), $record->getPrimaryKeys());
+        $this->connection->delete($schema->getTable(), $record->getPrimaryKey());
         $record->updateState(Record::STATE_DELETE);
     }
 

@@ -16,12 +16,15 @@ class Record implements \ArrayAccess
 
     private $schema;
 
+    private $primaryKey;
+
     private $values;
 
     private $changed;
 
     private $state;
 
+    /** @var Record[][] */
     private $relations;
 
     public function __construct(Schema $schema)
@@ -30,17 +33,16 @@ class Record implements \ArrayAccess
         $this->values = array_fill_keys($schema->getFields(), null);
         $this->state = self::STATE_INSERT;
         $this->changed = [];
+        $this->relations = [];
     }
 
-    public function getPrimaryKeys(): array
+    public function getPrimaryKey(): array
     {
-        $primaryKey = [];
-
-        foreach ($this->schema->getPrimaryKeys() as $key) {
-            $primaryKey[$key] = $this->values[$key];
+        if (empty($this->primaryKey)) {
+            throw new \RuntimeException('Cannot refer to the record via primary key, if it is not defined');
         }
 
-        return $primaryKey;
+        return $this->primaryKey;
     }
 
     public function isNew(): bool
@@ -57,6 +59,17 @@ class Record implements \ArrayAccess
     {
         $this->state = $state === self::STATE_DELETE ? self::STATE_DELETE : self::STATE_UPDATE;
         $this->changed = [];
+
+        $this->updatePrimaryKey();
+    }
+
+    private function updatePrimaryKey(): void
+    {
+        $this->primaryKey = [];
+
+        foreach ($this->schema->getPrimaryKey() as $key) {
+            $this->primaryKey[$key] = $this->values[$key];
+        }
     }
 
     public function getSchema(): Schema
@@ -67,6 +80,11 @@ class Record implements \ArrayAccess
     public function getModel(): Model
     {
         return $this->schema->getModel($this);
+    }
+
+    public function isReferenceLoaded(string $name): bool
+    {
+        return isset($this->relations[$name]);
     }
 
     /**
@@ -84,42 +102,57 @@ class Record implements \ArrayAccess
 
     public function fillReference(string $name, array $records): void
     {
-        $relation = $this->getSchema()->getReference($name);
+        $reference = $this->getSchema()->getReference($name);
 
         foreach ($records as $record) {
-            if (!$this->isRelated($relation, $record)) {
+            if (!$this->isRelated($reference, $record)) {
                 throw new \InvalidArgumentException('The provided records are not related to this record');
             }
         }
 
-        if (\count($records) > 1 && $relation->isSingleRelationship()) {
+        if (\count($records) > 1 && $reference->isSingleRelationship()) {
             throw new \InvalidArgumentException('The relationship cannot reference more than a single record');
         }
 
         $this->relations[$name] = array_values($records);
     }
 
-    public function isReferenceLoaded(string $name): bool
+    private function isRelated(Reference $reference, Record $record): bool
     {
-        return isset($this->relations[$name]);
-    }
-
-    private function isRelated(Reference $relation, Record $record): bool
-    {
-        if ($relation->getReferencedSchema() !== $record->getSchema()) {
+        if ($reference->getReferencedSchema() !== $record->getSchema()) {
             return false;
         }
 
-        $keys = $relation->getFields();
-        $references = $relation->getReferencedFields();
+        $keys = $reference->getFields();
+        $fields = $reference->getReferencedFields();
 
-        while ($keys) {
-            if (!$relation->matchValues($this->values[array_pop($keys)], $record->values[array_pop($references)])) {
+        foreach ($keys as $index => $key) {
+            if ((string) $this->values[$key] !== (string) $record->values[$fields[$index]]) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    public function getMappedRecords(): array
+    {
+        /** @var Record[] $records */
+        $records = [spl_object_id($this) => $this];
+
+        do {
+            foreach (current($records)->relations as $relation) {
+                foreach ($relation as $record) {
+                    $id = spl_object_id($record);
+
+                    if (!isset($records[$id])) {
+                        $records[$id] = $record;
+                    }
+                }
+            }
+        } while (next($records) !== false);
+
+        return array_values($records);
     }
 
     public function setDatabaseValues(array $row)
@@ -131,6 +164,7 @@ class Record implements \ArrayAccess
         $this->values = $row;
         $this->state = self::STATE_UPDATE;
         $this->changed = [];
+        $this->updatePrimaryKey();
     }
 
     public function getDatabaseValues(): array
@@ -161,10 +195,6 @@ class Record implements \ArrayAccess
     {
         if (!array_key_exists($offset, $this->values)) {
             throw new \InvalidArgumentException("Invalid record field '$offset'");
-        }
-
-        if ($this->state === self::STATE_UPDATE && \in_array($offset, $this->schema->getPrimaryKeys(), true)) {
-            throw new \RuntimeException('Cannot change values of primary keys for saved records');
         }
 
         $this->values[$offset] = $value;

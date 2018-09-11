@@ -19,15 +19,18 @@ class Schema
 
     protected $table;
 
-    protected $primaryKeys;
+    protected $primaryKey;
 
     protected $fields;
 
     protected $references;
 
+    private $referenceCache;
+
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
+        $this->referenceCache = [];
     }
 
     public function getTable(): string
@@ -35,9 +38,9 @@ class Schema
         return $this->table;
     }
 
-    public function getPrimaryKeys(): array
+    public function getPrimaryKey(): array
     {
-        return $this->primaryKeys;
+        return (array) $this->primaryKey;
     }
 
     public function getFields(): array
@@ -47,16 +50,22 @@ class Schema
 
     public function getReference(string $name): Reference
     {
+        if (isset($this->referenceCache[$name])) {
+            return $this->referenceCache[$name];
+        }
+
         if (!isset($this->references[$name])) {
             throw new \InvalidArgumentException("Invalid reference '$name'");
         }
 
-        return new Reference(
+        $this->referenceCache[$name] = new Reference(
             $this,
-            $this->references[$name]['keys'],
+            (array) $this->references[$name]['key'],
             $this->getSchema($this->references[$name]['schema']),
-            $this->references[$name]['fields']
+            (array) $this->references[$name]['field']
         );
+
+        return $this->referenceCache[$name];
     }
 
     private function getSchema(string $name): Schema

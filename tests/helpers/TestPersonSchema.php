@@ -16,20 +16,20 @@ class TestPersonSchema extends Schema
 
     protected $table = 'phpunit_tests_person';
 
-    protected $primaryKeys = ['id'];
+    protected $primaryKey = 'id';
 
     protected $fields = ['id', 'first_name', 'last_name', 'age', 'weight', 'license'];
 
     protected $references = [
         'parents' => [
-            'keys' => ['id'],
+            'key' => 'id',
             'schema' => TestParentSchema::class,
-            'fields' => ['child_id'],
+            'field' => 'child_id',
         ],
         'children' => [
-            'keys' => ['id'],
+            'key' => 'id',
             'schema' => TestParentSchema::class,
-            'fields' => ['parent_id'],
+            'field' => 'parent_id',
         ],
     ];
 }

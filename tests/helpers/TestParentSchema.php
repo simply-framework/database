@@ -12,24 +12,24 @@ use Simply\Database\Schema;
  */
 class TestParentSchema extends Schema
 {
-    protected $model;
+    protected $model = TestParentModel::class;
 
     protected $table = 'phpunit_tests_parent';
 
-    protected $primaryKeys = ['parent_id', 'child_id'];
+    protected $primaryKey = ['parent_id', 'child_id'];
 
     protected $fields = ['parent_id', 'child_id'];
 
     protected $references = [
         'child' => [
-            'keys' => ['child_id'],
+            'key' => 'child_id',
             'schema' => TestPersonSchema::class,
-            'fields' => ['id'],
+            'field' => 'id',
         ],
         'parent' => [
-            'keys' => ['parent_id'],
+            'key' => 'parent_id',
             'schema' => TestPersonSchema::class,
-            'fields' => ['id'],
+            'field' => 'id',
         ],
     ];
 }

@@ -39,7 +39,9 @@ class ReferenceFiller
                 throw new \InvalidArgumentException('The provided list of records did not share the same schema');
             }
 
-            $this->cacheRecord($schemaId, $record);
+            foreach ($record->getMappedRecords() as $mappedRecord) {
+                $this->cacheRecord($schemaId, $mappedRecord);
+            }
         }
 
         $this->fillReferences($records, $references);
@@ -64,7 +66,7 @@ class ReferenceFiller
                 throw new \RuntimeException('Filling references for composite foreign keys is not supported');
             }
 
-            $isPrimaryReference = $fields === $parent->getPrimaryKeys();
+            $isPrimaryReference = $fields === $parent->getPrimaryKey();
             $key = array_pop($keys);
             $field = array_pop($fields);
             $options = [];
@@ -75,11 +77,6 @@ class ReferenceFiller
 
                 if ($record->isReferenceLoaded($name)) {
                     $sorted[$value] = $record->getReference($name);
-
-                    foreach ($sorted[$value] as $referencedRecord) {
-                        $this->cacheRecord($schemaId, $referencedRecord);
-                    }
-
                     continue;
                 }
 
@@ -134,7 +131,12 @@ class ReferenceFiller
 
     private function cacheRecord(string $schemaId, Record $record): void
     {
-        $recordId = implode('-', $record->getPrimaryKeys());
+        $recordId = implode('-', $record->getPrimaryKey());
+
+        if (isset($this->cache[$schemaId][$recordId])) {
+            throw new \RuntimeException('Duplicated record detected when filling references for records');
+        }
+
         $this->cache[$schemaId][$recordId] = $record;
     }
 
@@ -142,7 +144,7 @@ class ReferenceFiller
     {
         $primaryKey = [];
 
-        foreach ($schema->getPrimaryKeys() as $key) {
+        foreach ($schema->getPrimaryKey() as $key) {
             $primaryKey[] = $row[$key];
         }
 

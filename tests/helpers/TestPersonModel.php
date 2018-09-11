@@ -64,6 +64,9 @@ class TestPersonModel extends Model
         $this->record['license'] = true;
     }
 
+    /**
+     * @return TestPersonModel[]
+     */
     public function getParents(): array
     {
         $parents = [];
@@ -75,6 +78,9 @@ class TestPersonModel extends Model
         return $parents;
     }
 
+    /**
+     * @return TestPersonModel[]
+     */
     public function getChildren(): array
     {
         $children = [];
