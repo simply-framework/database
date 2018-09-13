@@ -15,7 +15,7 @@ use Simply\Database\Connection\Connection;
 abstract class IntegrationTestCase extends TestCase
 {
     /** @var Connection */
-    private $connection;
+    protected $connection;
 
     /** @var TestPersonSchema */
     protected $personSchema;
@@ -210,5 +210,71 @@ abstract class IntegrationTestCase extends TestCase
         foreach ($parents as $parent) {
             $this->assertTrue(\in_array($person->getDatabaseRecord(), $childRecords($parent), true));
         }
+
+        $repository->loadFamily($parents);
+
+        foreach ($parents as $parent) {
+            $this->assertTrue(\in_array($person->getDatabaseRecord(), $childRecords($parent), true));
+        }
+    }
+
+    public function testInsertWithNoValues()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->insert($this->personSchema->getTable(), []);
+    }
+
+    public function testSelectWithNoFields()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->select([], $this->personSchema->getTable(), []);
+    }
+
+    public function testSelectWithNoTable()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->select(['id'], '', []);
+    }
+
+    public function testUpdateWithNoValues()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->update($this->personSchema->getTable(), [], ['id' => 1]);
+    }
+
+    public function testUpdateWithNoConditions()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->update($this->personSchema->getTable(), ['first_name' => 'Jane'], []);
+    }
+
+    public function testDeleteWithNoConditions()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->delete($this->personSchema->getTable(), []);
+    }
+
+    public function testUnsupportedValueType()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->insert($this->personSchema->getTable(), ['first_name' => ['array', 'values']]);
+    }
+
+    public function testInvalidSortOrder()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->connection->select(['id'], $this->personSchema->getTable(), [], ['id' => 0]);
+    }
+
+    public function testUnlimitedWithoutSortOrder()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $repository->savePerson($repository->createPerson('Jane', 'Doe', 20));
+        $repository->savePerson($repository->createPerson('John', 'Doe', 20));
+
+        $results = $this->connection->select(['id'], $this->personSchema->getTable(), [], [], 1);
+
+        $this->assertCount(2, iterator_to_array($results));
     }
 }

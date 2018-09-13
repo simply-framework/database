@@ -25,7 +25,7 @@ class Record implements \ArrayAccess
     private $state;
 
     /** @var Record[][] */
-    private $relations;
+    private $references;
 
     public function __construct(Schema $schema)
     {
@@ -33,7 +33,7 @@ class Record implements \ArrayAccess
         $this->values = array_fill_keys($schema->getFields(), null);
         $this->state = self::STATE_INSERT;
         $this->changed = [];
-        $this->relations = [];
+        $this->references = [];
     }
 
     public function getPrimaryKey(): array
@@ -82,9 +82,71 @@ class Record implements \ArrayAccess
         return $this->schema->getModel($this);
     }
 
+    public function getReferredModel(string $name): Model
+    {
+        $reference = $this->getSchema()->getReference($name);
+
+        if (!$reference->isSingleRelationship()) {
+            throw new \RuntimeException('Can only refer to single models in a single relationship');
+        }
+
+        $records = $this->getReference($name);
+
+        if (empty($records)) {
+            throw new \UnexpectedValueException('The single relationship does not refer to any record');
+        }
+
+        return $records[0]->getModel();
+    }
+
+    public function getReferredModels(string $name): array
+    {
+        $reference = $this->getSchema()->getReference($name);
+
+        if ($reference->isSingleRelationship()) {
+            throw new \RuntimeException('Cannot refer to multiple models in a single relationship');
+        }
+
+        $models = [];
+
+        foreach ($this->getReference($name) as $record) {
+            $models[] = $record->getModel();
+        }
+
+        return $models;
+    }
+
+    public function getReferredProxyModels(string $proxy, string $name): array
+    {
+        $proxyReference = $this->getSchema()->getReference($proxy);
+        $reference = $proxyReference->getReferencedSchema()->getReference($name);
+
+        if ($proxyReference->isSingleRelationship()) {
+            throw new \RuntimeException('Cannot refer to multiple models in a single relationship');
+        }
+
+        if (!$reference->isSingleRelationship()) {
+            throw new \RuntimeException('Can only refer to single models in a single relationship');
+        }
+
+        $models = [];
+
+        foreach ($this->getReference($proxy) as $record) {
+            $records = $record->getReference($name);
+
+            if (empty($records)) {
+                throw new \UnexpectedValueException('The single relationship does not refer to any record');
+            }
+
+            $models[] = $records[0]->getModel();
+        }
+
+        return $models;
+    }
+
     public function isReferenceLoaded(string $name): bool
     {
-        return isset($this->relations[$name]);
+        return isset($this->references[$name]);
     }
 
     /**
@@ -93,11 +155,11 @@ class Record implements \ArrayAccess
      */
     public function getReference(string $name): array
     {
-        if (!isset($this->relations[$name])) {
+        if (!isset($this->references[$name])) {
             throw new \RuntimeException("Cannot access relation '$name' that has not been provided");
         }
 
-        return $this->relations[$name];
+        return $this->references[$name];
     }
 
     public function fillReference(string $name, array $records): void
@@ -114,7 +176,7 @@ class Record implements \ArrayAccess
             throw new \InvalidArgumentException('The relationship cannot reference more than a single record');
         }
 
-        $this->relations[$name] = array_values($records);
+        $this->references[$name] = array_values($records);
     }
 
     private function isRelated(Reference $reference, Record $record): bool
@@ -135,13 +197,16 @@ class Record implements \ArrayAccess
         return true;
     }
 
+    /**
+     * @return Record[]
+     */
     public function getMappedRecords(): array
     {
         /** @var Record[] $records */
         $records = [spl_object_id($this) => $this];
 
         do {
-            foreach (current($records)->relations as $relation) {
+            foreach (current($records)->references as $relation) {
                 foreach ($relation as $record) {
                     $id = spl_object_id($record);
 

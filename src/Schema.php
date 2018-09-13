@@ -10,7 +10,7 @@ use Psr\Container\ContainerInterface;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class Schema
+abstract class Schema
 {
     private $container;
 

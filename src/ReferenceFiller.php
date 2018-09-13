@@ -32,7 +32,6 @@ class ReferenceFiller
 
         $this->cache = [];
         $schema = reset($records)->getSchema();
-        $schemaId = $this->getSchemaId($schema);
 
         foreach ($records as $record) {
             if ($record->getSchema() !== $schema) {
@@ -40,7 +39,7 @@ class ReferenceFiller
             }
 
             foreach ($record->getMappedRecords() as $mappedRecord) {
-                $this->cacheRecord($schemaId, $mappedRecord);
+                $this->cacheRecord($this->getSchemaId($mappedRecord->getSchema()), $mappedRecord);
             }
         }
 
@@ -129,18 +128,18 @@ class ReferenceFiller
         return $subReferences;
     }
 
-    private function cacheRecord(string $schemaId, Record $record): void
+    private function cacheRecord(int $schemaId, Record $record): void
     {
         $recordId = implode('-', $record->getPrimaryKey());
 
-        if (isset($this->cache[$schemaId][$recordId])) {
+        if (isset($this->cache[$schemaId][$recordId]) && $this->cache[$schemaId][$recordId] !== $record) {
             throw new \RuntimeException('Duplicated record detected when filling references for records');
         }
 
         $this->cache[$schemaId][$recordId] = $record;
     }
 
-    private function getCachedRecord(string $schemaId, Schema $schema, array $row): Record
+    private function getCachedRecord(int $schemaId, Schema $schema, array $row): Record
     {
         $primaryKey = [];
 
@@ -159,8 +158,8 @@ class ReferenceFiller
         return $record;
     }
 
-    private function getSchemaId(Schema $schema): string
+    private function getSchemaId(Schema $schema): int
     {
-        return spl_object_hash($schema);
+        return spl_object_id($schema);
     }
 }

@@ -29,7 +29,15 @@ class Reference
         $this->primaryRelation = array_diff($this->referencedSchema->getPrimaryKey(), $this->referencedFields) === [];
 
         if (empty($this->fields) || \count($this->fields) !== \count($this->referencedFields)) {
-            throw new \InvalidArgumentException('Unexpected list of fields in relationship');
+            throw new \InvalidArgumentException('Unexpected list of fields in reference');
+        }
+
+        if (array_diff($this->fields, $this->schema->getFields()) !== []) {
+            throw new \InvalidArgumentException('The referring fields must be defined in the referring schema');
+        }
+
+        if (array_diff($this->referencedFields, $this->referencedSchema->getFields()) !== []) {
+            throw new \InvalidArgumentException('The referred fields must be defined in the referred schema');
         }
     }
 

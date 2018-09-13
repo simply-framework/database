@@ -61,4 +61,14 @@ SQL;
             $pdo->exec($query);
         }
     }
+
+    public function testDSNSupport(): void
+    {
+        $method = new \ReflectionMethod($this->connection, 'getDataSource');
+        $method->setAccessible(true);
+
+        $this->assertNotContains('port', $method->invoke($this->connection, 'localhost', 'database'));
+        $this->assertContains('port', $method->invoke($this->connection, 'localhost:3306', 'database'));
+        $this->assertContains('unix_socket', $method->invoke($this->connection, '/tmp/mysql.sock', 'database'));
+    }
 }
