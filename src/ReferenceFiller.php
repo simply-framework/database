@@ -55,7 +55,7 @@ class ReferenceFiller
         $schema = reset($records)->getSchema();
 
         foreach ($this->parseReferences($references) as $name => $childReferences) {
-            $reference = $schema->getReference($name);
+            $reference = $schema->getRelationship($name);
             $keys = $reference->getFields();
             $fields = $reference->getReferencedFields();
             $parent = $reference->getReferencedSchema();
@@ -65,6 +65,7 @@ class ReferenceFiller
                 throw new \RuntimeException('Filling references for composite foreign keys is not supported');
             }
 
+            $fillRecords = [];
             $isPrimaryReference = $fields === $parent->getPrimaryKey();
             $key = array_pop($keys);
             $field = array_pop($fields);
@@ -74,17 +75,21 @@ class ReferenceFiller
             foreach ($records as $record) {
                 $value = $record[$key];
 
-                if ($record->isReferenceLoaded($name)) {
-                    $sorted[$value] = $record->getReference($name);
+                if ($record->hasReferencedRecords($name)) {
+                    $sorted[$value] = $record->getReferencedRecords($name);
                     continue;
                 }
+
+                $fillRecords[] = $record;
 
                 if ($isPrimaryReference && isset($this->cache[$schemaId][$value])) {
                     $sorted[$value] = [$this->cache[$schemaId][$value]];
                     continue;
                 }
 
-                $options[$value] = true;
+                if ($value !== null) {
+                    $options[$value] = true;
+                }
             }
 
             $options = array_keys(array_diff_key($options, $sorted));
@@ -99,8 +104,8 @@ class ReferenceFiller
                 }
             }
 
-            foreach ($records as $record) {
-                $record->fillReference($name, $sorted[$record[$key]] ?? []);
+            foreach ($fillRecords as $record) {
+                $record->fillReferencedRecords($name, $sorted[$record[$key]] ?? []);
             }
 
             if ($sorted && $childReferences) {

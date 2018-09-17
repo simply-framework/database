@@ -30,17 +30,17 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
 
         $this->expectException(\InvalidArgumentException::class);
-        $schema->getReference('not-a-valid-reference');
+        $schema->getRelationship('not-a-valid-reference');
     }
 
     public function testSchemaEquivalence()
     {
         $schema = $this->getPersonSchema();
 
-        $reference = $schema->getReference('parents');
+        $reference = $schema->getRelationship('parents');
 
         $this->assertSame($schema, $reference->getSchema());
-        $this->assertSame($schema, $reference->getReferencedSchema()->getReference('parent')->getReferencedSchema());
+        $this->assertSame($schema, $reference->getReferencedSchema()->getRelationship('parent')->getReferencedSchema());
     }
 
     public function testInvalidNumberOfFields(): void
@@ -48,7 +48,7 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
 
         $this->expectException(\InvalidArgumentException::class);
-        new Reference($schema, ['first_name', 'last_name'], $schema, ['first_name']);
+        new Relationship('test', $schema, ['first_name', 'last_name'], $schema, ['first_name'], false);
     }
 
     public function testInvalidReferringFields(): void
@@ -56,7 +56,7 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
 
         $this->expectException(\InvalidArgumentException::class);
-        new Reference($schema, ['father_id'], $schema, ['id']);
+        new Relationship('test', $schema, ['father_id'], $schema, ['id'], false);
     }
 
     public function testInvalidReferredFields(): void
@@ -64,6 +64,6 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
 
         $this->expectException(\InvalidArgumentException::class);
-        new Reference($schema, ['id'], $schema, ['mother_id']);
+        new Relationship('test', $schema, ['id'], $schema, ['mother_id'], false);
     }
 }

@@ -23,14 +23,14 @@ abstract class Schema
 
     protected $fields;
 
-    protected $references;
+    protected $relationships = [];
 
-    private $referenceCache;
+    private $relationshipCache;
 
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->referenceCache = [];
+        $this->relationshipCache = [];
     }
 
     public function getTable(): string
@@ -40,7 +40,7 @@ abstract class Schema
 
     public function getPrimaryKey(): array
     {
-        return (array) $this->primaryKey;
+        return $this->primaryKey === null ? [] : (array) $this->primaryKey;
     }
 
     public function getFields(): array
@@ -48,24 +48,44 @@ abstract class Schema
         return $this->fields;
     }
 
-    public function getReference(string $name): Reference
+    /**
+     * @return Relationship[]
+     */
+    public function getRelationships(): array
     {
-        if (isset($this->referenceCache[$name])) {
-            return $this->referenceCache[$name];
+        if (array_diff_key($this->relationships, $this->relationshipCache) === []) {
+            return $this->relationshipCache;
         }
 
-        if (!isset($this->references[$name])) {
+        $relationships = [];
+
+        foreach (array_keys($this->relationships) as $name) {
+            $relationships[$name] = $this->getRelationship($name);
+        }
+
+        return $relationships;
+    }
+
+    public function getRelationship(string $name): Relationship
+    {
+        if (isset($this->relationshipCache[$name])) {
+            return $this->relationshipCache[$name];
+        }
+
+        if (!isset($this->relationships[$name])) {
             throw new \InvalidArgumentException("Invalid reference '$name'");
         }
 
-        $this->referenceCache[$name] = new Reference(
+        $this->relationshipCache[$name] = new Relationship(
+            $name,
             $this,
-            (array) $this->references[$name]['key'],
-            $this->getSchema($this->references[$name]['schema']),
-            (array) $this->references[$name]['field']
+            (array) $this->relationships[$name]['key'],
+            $this->getSchema($this->relationships[$name]['schema']),
+            (array) $this->relationships[$name]['field'],
+            empty($this->relationships[$name]['unique']) ? false : true
         );
 
-        return $this->referenceCache[$name];
+        return $this->relationshipCache[$name];
     }
 
     private function getSchema(string $name): Schema

@@ -20,7 +20,7 @@ class TestParentSchema extends Schema
 
     protected $fields = ['parent_id', 'child_id'];
 
-    protected $references = [
+    protected $relationships = [
         'child' => [
             'key' => 'child_id',
             'schema' => TestPersonSchema::class,

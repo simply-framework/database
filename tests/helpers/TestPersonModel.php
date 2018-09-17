@@ -71,8 +71,8 @@ class TestPersonModel extends Model
     {
         $parents = [];
 
-        foreach ($this->record->getReference('parents') as $relationship) {
-            $parents[] = $relationship->getReference('parent')[0]->getModel();
+        foreach ($this->record->getReferencedRecords('parents') as $relationship) {
+            $parents[] = $relationship->getReferencedRecords('parent')[0]->getModel();
         }
 
         return $parents;
@@ -85,8 +85,8 @@ class TestPersonModel extends Model
     {
         $children = [];
 
-        foreach ($this->record->getReference('children') as $relationship) {
-            $children[] = $relationship->getReference('child')[0]->getModel();
+        foreach ($this->record->getReferencedRecords('children') as $relationship) {
+            $children[] = $relationship->getReferencedRecords('child')[0]->getModel();
         }
 
         return $children;
