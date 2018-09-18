@@ -124,7 +124,7 @@ class Relationship
     public function fillRelationship(array $records, array $referencedRecords): void
     {
         if (\count($this->getFields()) !== 1) {
-            throw new \InvalidArgumentException('Relationship fill is not supported for composite foreign keys');
+            throw new \RuntimeException('Relationship fill is not supported for composite foreign keys');
         }
 
         if (empty($records)) {
@@ -181,7 +181,7 @@ class Relationship
 
         foreach ($records as $record) {
             if ($record->getSchema() !== $schema) {
-                throw new \InvalidArgumentException('Quick fill can only fill referenced records for one schema');
+                throw new \InvalidArgumentException('The filled records must all belong to the referencing schema');
             }
 
             $value = $record[$field];

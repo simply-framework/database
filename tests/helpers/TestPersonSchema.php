@@ -36,10 +36,11 @@ class TestPersonSchema extends Schema
             'schema' => TestPersonSchema::class,
             'field' => 'id',
         ],
-        'spouse_alt' => [
+        'spouse_reverse' => [
             'key' => 'id',
             'schema' => TestPersonSchema::class,
             'field' => 'spouse_id',
+            'unique' => true,
         ],
         'home' => [
             'key' => 'home_id',

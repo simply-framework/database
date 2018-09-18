@@ -5,7 +5,7 @@ namespace Simply\Database;
 use Simply\Database\Connection\Connection;
 
 /**
- * ReferenceFiller.
+ * RelationshipFiller.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
@@ -48,13 +48,13 @@ class RelationshipFiller
 
     /**
      * @param Record[] $records
-     * @param string[] $references
+     * @param string[] $relationships
      */
-    private function fillRelationships(array $records, array $references): void
+    private function fillRelationships(array $records, array $relationships): void
     {
         $schema = reset($records)->getSchema();
 
-        foreach ($this->parseChildRelationships($references) as $name => $childRelationships) {
+        foreach ($this->parseChildRelationships($relationships) as $name => $childRelationships) {
             $relationship = $schema->getRelationship($name);
             $keys = $relationship->getFields();
             $fields = $relationship->getReferencedFields();
@@ -62,24 +62,29 @@ class RelationshipFiller
             $schemaId = $this->getSchemaId($parent);
 
             if (\count($fields) > 1) {
-                throw new \RuntimeException('Filling references for composite foreign keys is not supported');
+                throw new \RuntimeException('Filling relationships for composite foreign keys is not supported');
             }
 
             $isPrimaryReference = $fields === $parent->getPrimaryKey();
             $key = array_pop($keys);
             $field = array_pop($fields);
+            $fillRecords = [];
             $options = [];
             $filled = [];
 
             foreach ($records as $record) {
                 $value = $record[$key];
 
-                if ($record->hasReferencedRecords($name)) {
+                if ($value === null) {
+                    $record->setReferencedRecords($name, []);
+                } elseif ($record->hasReferencedRecords($name)) {
                     $filled[$value] = $record->getReferencedRecords($name);
                 } elseif ($isPrimaryReference && isset($this->cache[$schemaId][$value])) {
                     $filled[$value] = [$this->cache[$schemaId][$value]];
-                } elseif ($value !== null) {
+                    $fillRecords[] = $record;
+                } else {
                     $options[$value] = true;
+                    $fillRecords[] = $record;
                 }
             }
 
@@ -95,7 +100,7 @@ class RelationshipFiller
                 }
             }
 
-            $relationship->fillRelationship($records, $loaded);
+            $relationship->fillRelationship($fillRecords, $loaded);
 
             if ($loaded && $childRelationships) {
                 $this->fillRelationships($loaded, $childRelationships);
@@ -127,7 +132,7 @@ class RelationshipFiller
         $recordId = implode('-', $record->getPrimaryKey());
 
         if (isset($this->cache[$schemaId][$recordId]) && $this->cache[$schemaId][$recordId] !== $record) {
-            throw new \RuntimeException('Duplicated record detected when filling references for records');
+            throw new \RuntimeException('Duplicated record detected when filling relationships for records');
         }
 
         $this->cache[$schemaId][$recordId] = $record;

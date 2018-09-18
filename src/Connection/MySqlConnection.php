@@ -20,6 +20,7 @@ class MySqlConnection implements Connection
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                 \PDO::ATTR_EMULATE_PREPARES => false,
                 \PDO::MYSQL_ATTR_INIT_COMMAND => sprintf("SET time_zone = '%s'", date('P')),
+                \PDO::MYSQL_ATTR_FOUND_ROWS => true,
             ]);
         };
     }

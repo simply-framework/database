@@ -12,8 +12,6 @@ use Psr\Container\ContainerInterface;
  */
 abstract class Schema
 {
-    private $container;
-
     /** @var string|Model */
     protected $model;
 
@@ -27,10 +25,12 @@ abstract class Schema
 
     private $relationshipCache;
 
+    private $container;
+
     public function __construct(ContainerInterface $container)
     {
-        $this->container = $container;
         $this->relationshipCache = [];
+        $this->container = $container;
     }
 
     public function getTable(): string
@@ -73,7 +73,7 @@ abstract class Schema
         }
 
         if (!isset($this->relationships[$name])) {
-            throw new \InvalidArgumentException("Invalid reference '$name'");
+            throw new \InvalidArgumentException("Invalid relationship '$name'");
         }
 
         $this->relationshipCache[$name] = new Relationship(
