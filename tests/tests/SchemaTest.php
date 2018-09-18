@@ -37,10 +37,13 @@ class SchemaTest extends TestCase
     {
         $schema = $this->getPersonSchema();
 
-        $reference = $schema->getRelationship('parents');
+        $relationship = $schema->getRelationship('parents');
 
-        $this->assertSame($schema, $reference->getSchema());
-        $this->assertSame($schema, $reference->getReferencedSchema()->getRelationship('parent')->getReferencedSchema());
+        $this->assertSame($schema, $relationship->getSchema());
+        $this->assertSame(
+            $schema,
+            $relationship->getReferencedSchema()->getRelationship('parent')->getReferencedSchema()
+        );
     }
 
     public function testInvalidNumberOfFields(): void
@@ -59,7 +62,7 @@ class SchemaTest extends TestCase
         new Relationship('test', $schema, ['father_id'], $schema, ['id'], false);
     }
 
-    public function testInvalidReferredFields(): void
+    public function testInvalidReferencedFields(): void
     {
         $schema = $this->getPersonSchema();
 

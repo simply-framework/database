@@ -10,7 +10,7 @@ use Simply\Database\Connection\Connection;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class ReferenceFiller
+class RelationshipFiller
 {
     private $connection;
     private $cache;
@@ -22,9 +22,9 @@ class ReferenceFiller
 
     /**
      * @param Record[] $records
-     * @param string[] $references
+     * @param string[] $relationships
      */
-    public function fill(array $records, array $references): void
+    public function fill(array $records, array $relationships): void
     {
         if (empty($records)) {
             return;
@@ -38,99 +38,88 @@ class ReferenceFiller
                 throw new \InvalidArgumentException('The provided list of records did not share the same schema');
             }
 
-            foreach ($record->getMappedRecords() as $mappedRecord) {
+            foreach ($record->getAllReferencedRecords() as $mappedRecord) {
                 $this->cacheRecord($this->getSchemaId($mappedRecord->getSchema()), $mappedRecord);
             }
         }
 
-        $this->fillReferences($records, $references);
+        $this->fillRelationships($records, $relationships);
     }
 
     /**
      * @param Record[] $records
      * @param string[] $references
      */
-    private function fillReferences(array $records, array $references): void
+    private function fillRelationships(array $records, array $references): void
     {
         $schema = reset($records)->getSchema();
 
-        foreach ($this->parseReferences($references) as $name => $childReferences) {
-            $reference = $schema->getRelationship($name);
-            $keys = $reference->getFields();
-            $fields = $reference->getReferencedFields();
-            $parent = $reference->getReferencedSchema();
+        foreach ($this->parseChildRelationships($references) as $name => $childRelationships) {
+            $relationship = $schema->getRelationship($name);
+            $keys = $relationship->getFields();
+            $fields = $relationship->getReferencedFields();
+            $parent = $relationship->getReferencedSchema();
             $schemaId = $this->getSchemaId($parent);
 
             if (\count($fields) > 1) {
                 throw new \RuntimeException('Filling references for composite foreign keys is not supported');
             }
 
-            $fillRecords = [];
             $isPrimaryReference = $fields === $parent->getPrimaryKey();
             $key = array_pop($keys);
             $field = array_pop($fields);
             $options = [];
-            $sorted = [];
+            $filled = [];
 
             foreach ($records as $record) {
                 $value = $record[$key];
 
                 if ($record->hasReferencedRecords($name)) {
-                    $sorted[$value] = $record->getReferencedRecords($name);
-                    continue;
-                }
-
-                $fillRecords[] = $record;
-
-                if ($isPrimaryReference && isset($this->cache[$schemaId][$value])) {
-                    $sorted[$value] = [$this->cache[$schemaId][$value]];
-                    continue;
-                }
-
-                if ($value !== null) {
+                    $filled[$value] = $record->getReferencedRecords($name);
+                } elseif ($isPrimaryReference && isset($this->cache[$schemaId][$value])) {
+                    $filled[$value] = [$this->cache[$schemaId][$value]];
+                } elseif ($value !== null) {
                     $options[$value] = true;
                 }
             }
 
-            $options = array_keys(array_diff_key($options, $sorted));
+            $loaded = empty($filled) ? [] : array_merge(... array_values($filled));
+            $options = array_keys(array_diff_key($options, $filled));
 
             if ($options) {
                 $result = $this->connection->select($parent->getFields(), $parent->getTable(), [$field => $options]);
                 $result->setFetchMode(\PDO::FETCH_ASSOC);
 
                 foreach ($result as $row) {
-                    $record = $this->getCachedRecord($schemaId, $parent, $row);
-                    $sorted[$record[$field]][] = $record;
+                    $loaded[] = $this->getCachedRecord($schemaId, $parent, $row);
                 }
             }
 
-            foreach ($fillRecords as $record) {
-                $record->fillReferencedRecords($name, $sorted[$record[$key]] ?? []);
-            }
+            $relationship->fillRelationship($records, $loaded);
 
-            if ($sorted && $childReferences) {
-                $this->fillReferences(array_merge(... $sorted), $childReferences);
+            if ($loaded && $childRelationships) {
+                $this->fillRelationships($loaded, $childRelationships);
             }
         }
     }
 
-    private function parseReferences(array $references): array
+    private function parseChildRelationships(array $relationships): array
     {
-        $subReferences = [];
+        $childRelationships = [];
 
-        foreach ($references as $reference) {
-            $parts = explode('.', $reference, 2);
+        foreach ($relationships as $relationship) {
+            $parts = explode('.', $relationship, 2);
 
-            if (!isset($subReferences[$parts[0]])) {
-                $subReferences[$parts[0]] = [];
+            if (!isset($childRelationships[$parts[0]])) {
+                $childRelationships[$parts[0]] = [];
             }
 
             if (isset($parts[1])) {
-                $subReferences[$parts[0]][] = $parts[1];
+                $childRelationships[$parts[0]][] = $parts[1];
             }
         }
 
-        return $subReferences;
+        return $childRelationships;
     }
 
     private function cacheRecord(int $schemaId, Record $record): void

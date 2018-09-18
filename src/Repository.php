@@ -146,15 +146,15 @@ class Repository
 
     /**
      * @param Model[] $models
-     * @param string[] $references
+     * @param string[] $relationships
      */
-    protected function fillReferences(array $models, array $references): void
+    protected function fillRelationships(array $models, array $relationships): void
     {
         $records = array_map(function (Model $model): Record {
             return $model->getDatabaseRecord();
         }, array_values($models));
 
-        $filler = new ReferenceFiller($this->connection);
-        $filler->fill($records, $references);
+        $filler = new RelationshipFiller($this->connection);
+        $filler->fill($records, $relationships);
     }
 }

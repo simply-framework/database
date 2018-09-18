@@ -69,13 +69,7 @@ class TestPersonModel extends Model
      */
     public function getParents(): array
     {
-        $parents = [];
-
-        foreach ($this->record->getReferencedRecords('parents') as $relationship) {
-            $parents[] = $relationship->getReferencedRecords('parent')[0]->getModel();
-        }
-
-        return $parents;
+        return $this->record->getRelatedModelsByProxy('parents', 'parent');
     }
 
     /**
@@ -83,12 +77,6 @@ class TestPersonModel extends Model
      */
     public function getChildren(): array
     {
-        $children = [];
-
-        foreach ($this->record->getReferencedRecords('children') as $relationship) {
-            $children[] = $relationship->getReferencedRecords('child')[0]->getModel();
-        }
-
-        return $children;
+        return $this->record->getRelatedModelsByProxy('children', 'child');
     }
 }

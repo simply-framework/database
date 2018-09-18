@@ -94,7 +94,7 @@ class TestPersonRepository extends Repository
 
     public function loadFamily(array $people)
     {
-        $this->fillReferences($people, [
+        $this->fillRelationships($people, [
             'parents.parent.children.child',
             'children.child.parents.parent',
         ]);

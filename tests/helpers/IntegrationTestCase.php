@@ -161,7 +161,7 @@ abstract class IntegrationTestCase extends TestCase
         $this->assertCount(0, $repository->findByHasLicense(false));
     }
 
-    public function testLoadingReferences(): void
+    public function testLoadingRelationships(): void
     {
         $repository = $this->getTestPersonRepository();
 

@@ -25,7 +25,7 @@ class Record implements \ArrayAccess
     private $state;
 
     /** @var Record[][] */
-    private $references;
+    private $referencedRecords;
 
     private $model;
 
@@ -35,7 +35,7 @@ class Record implements \ArrayAccess
         $this->values = array_fill_keys($schema->getFields(), null);
         $this->state = self::STATE_INSERT;
         $this->changed = [];
-        $this->references = [];
+        $this->referencedRecords = [];
     }
 
     public function getPrimaryKey(): array
@@ -88,12 +88,43 @@ class Record implements \ArrayAccess
         return $this->model;
     }
 
-    public function getReferencedModel(string $name): Model
+    public function hasReferencedRecords(string $name): bool
+    {
+        $name = $this->getSchema()->getRelationship($name)->getName();
+
+        return isset($this->referencedRecords[$name]);
+    }
+
+    public function setReferencedRecords(string $name, array $records): void
+    {
+        $name = $this->getSchema()->getRelationship($name)->getName();
+
+        (function (Record ... $records) use ($name): void {
+            $this->referencedRecords[$name] = $records;
+        })(... $records);
+    }
+
+    /**
+     * @param string $name
+     * @return Record[]
+     */
+    public function getReferencedRecords(string $name): array
+    {
+        $name = $this->getSchema()->getRelationship($name)->getName();
+
+        if (!isset($this->referencedRecords[$name])) {
+            throw new \RuntimeException("The referenced records for the relationship '$name' have not been provided");
+        }
+
+        return $this->referencedRecords[$name];
+    }
+
+    public function getRelatedModel(string $name): ?Model
     {
         $relationship = $this->getSchema()->getRelationship($name);
 
         if (!$relationship->isUniqueRelationship()) {
-            throw new \RuntimeException('Cannot fetch a single model a non-unique relationship');
+            throw new \RuntimeException('A single related model can only be fetched for an unique relationship');
         }
 
         $records = $this->getReferencedRecords($name);
@@ -105,12 +136,12 @@ class Record implements \ArrayAccess
         return $this->getReferencedRecords($name)[0]->getModel();
     }
 
-    public function getReferredModels(string $name): array
+    public function getRelatedModels(string $name): array
     {
-        $reference = $this->getSchema()->getRelationship($name);
+        $relationship = $this->getSchema()->getRelationship($name);
 
-        if ($reference->isUniqueRelationship()) {
-            throw new \RuntimeException('Cannot refer to multiple models in a single relationship');
+        if ($relationship->isUniqueRelationship()) {
+            throw new \RuntimeException('Cannot fetch multiple models for an unique relationship');
         }
 
         $models = [];
@@ -122,17 +153,17 @@ class Record implements \ArrayAccess
         return $models;
     }
 
-    public function getReferredProxyModels(string $proxy, string $name): array
+    public function getRelatedModelsByProxy(string $proxy, string $name): array
     {
-        $proxyReference = $this->getSchema()->getRelationship($proxy);
-        $reference = $proxyReference->getReferencedSchema()->getRelationship($name);
+        $proxyRelationship = $this->getSchema()->getRelationship($proxy);
+        $relationship = $proxyRelationship->getReferencedSchema()->getRelationship($name);
 
-        if ($proxyReference->isUniqueRelationship()) {
-            throw new \RuntimeException('Cannot refer to multiple models in a single relationship');
+        if ($proxyRelationship->isUniqueRelationship()) {
+            throw new \RuntimeException('Cannot fetch related models via an unique proxy relationship');
         }
 
-        if (!$reference->isUniqueRelationship()) {
-            throw new \RuntimeException('Can only refer to single models in a single relationship');
+        if (!$relationship->isUniqueRelationship()) {
+            throw new \RuntimeException('Related models can only be fetched via proxy with an unique relationship');
         }
 
         $models = [];
@@ -141,7 +172,7 @@ class Record implements \ArrayAccess
             $records = $record->getReferencedRecords($name);
 
             if (empty($records)) {
-                throw new \UnexpectedValueException('The single relationship does not refer to any record');
+                continue;
             }
 
             $models[] = $records[0]->getModel();
@@ -150,82 +181,17 @@ class Record implements \ArrayAccess
         return $models;
     }
 
-    public function hasReferencedRecords(string $name): bool
-    {
-        return isset($this->references[$name]);
-    }
-
-    /**
-     * @param string $name
-     * @return Record[]
-     */
-    public function getReferencedRecords(string $name): array
-    {
-        if (!isset($this->references[$name])) {
-            throw new \RuntimeException("The referenced records for the relationship '$name' have not been filled");
-        }
-
-        return $this->references[$name];
-    }
-
-    /**
-     * @param string $name
-     * @param Record[] $records
-     */
-    public function fillReferencedRecords(string $name, array $records): void
-    {
-        $relationship = $this->getSchema()->getRelationship($name);
-
-        if (\count($records) > 1 && $relationship->isUniqueRelationship()) {
-            throw new \InvalidArgumentException('A unique relationship cannot reference more than a single record');
-        }
-
-        foreach ($records as $record) {
-            if (!$this->isRelated($relationship, $record)) {
-                throw new \InvalidArgumentException('The provided records are not related to this record');
-            }
-        }
-
-        if ($relationship->getReverseRelationship()->isUniqueRelationship()) {
-            $reverse = $relationship->getReverseRelationship()->getName();
-
-            foreach ($records as $record) {
-                $record->references[$reverse] = [$this];
-            }
-        }
-
-        $this->references[$name] = array_values($records);
-    }
-
-    private function isRelated(Relationship $reference, Record $record): bool
-    {
-        if ($reference->getReferencedSchema() !== $record->getSchema()) {
-            return false;
-        }
-
-        $keys = $reference->getFields();
-        $fields = $reference->getReferencedFields();
-
-        foreach ($keys as $index => $key) {
-            if ((string) $this->values[$key] !== (string) $record->values[$fields[$index]]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * @return Record[]
      */
-    public function getMappedRecords(): array
+    public function getAllReferencedRecords(): array
     {
         /** @var Record[] $records */
         $records = [spl_object_id($this) => $this];
 
         do {
-            foreach (current($records)->references as $relation) {
-                foreach ($relation as $record) {
+            foreach (current($records)->referencedRecords as $recordList) {
+                foreach ($recordList as $record) {
                     $id = spl_object_id($record);
 
                     if (!isset($records[$id])) {
@@ -288,6 +254,4 @@ class Record implements \ArrayAccess
     {
         $this->offsetSet($offset, null);
     }
-
-
 }

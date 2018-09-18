@@ -118,6 +118,6 @@ abstract class Schema
             }
         }
 
-        return $this->getModel($this->getRecord($values));
+        return $this->getRecord($values)->getModel();
     }
 }

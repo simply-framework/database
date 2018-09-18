@@ -116,4 +116,83 @@ class Relationship
             && $relationship->getFields() === $this->getReferencedFields()
             && $relationship->getReferencedFields() === $this->getFields();
     }
+
+    /**
+     * @param Record[] $records
+     * @param Record[] $referencedRecords
+     */
+    public function fillRelationship(array $records, array $referencedRecords): void
+    {
+        if (\count($this->getFields()) !== 1) {
+            throw new \InvalidArgumentException('Relationship fill is not supported for composite foreign keys');
+        }
+
+        if (empty($records)) {
+            return;
+        }
+
+        $this->assignSortedRecords($records, $this->getSortedRecords($referencedRecords));
+    }
+
+    /**
+     * @param Record[] $records
+     * @return Record[][]
+     */
+    private function getSortedRecords(array $records): array
+    {
+        $schema = $this->getReferencedSchema();
+        $field = $this->getReferencedFields()[0];
+        $unique = $this->isUniqueRelationship();
+        $sorted = [];
+
+        foreach ($records as $record) {
+            if ($record->getSchema() !== $schema) {
+                throw new \InvalidArgumentException('The referenced records must all belong to the referenced schema');
+            }
+
+            $value = $record[$field];
+
+            if ($value === null) {
+                continue;
+            }
+
+            if ($unique && isset($sorted[$value])) {
+                throw new \InvalidArgumentException('Unique relationship cannot reference more than a single record');
+            }
+
+            $sorted[$value][] = $record;
+        }
+
+        return $sorted;
+    }
+
+    /**
+     * @param Record[] $records
+     * @param Record[][] $sorted
+     */
+    private function assignSortedRecords(array $records, array $sorted): void
+    {
+        $schema = $this->getSchema();
+        $name = $this->getName();
+        $field = $this->getFields()[0];
+
+        $fillReverse = $this->getReverseRelationship()->isUniqueRelationship();
+        $reverse = $this->getReverseRelationship()->getName();
+
+        foreach ($records as $record) {
+            if ($record->getSchema() !== $schema) {
+                throw new \InvalidArgumentException('Quick fill can only fill referenced records for one schema');
+            }
+
+            $value = $record[$field];
+            $sortedRecords = $value === null || empty($sorted[$value]) ? [] : $sorted[$value];
+            $record->setReferencedRecords($name, $sortedRecords);
+
+            if ($fillReverse) {
+                foreach ($sortedRecords as $reverseRecord) {
+                    $reverseRecord->setReferencedRecords($reverse, [$record]);
+                }
+            }
+        }
+    }
 }
