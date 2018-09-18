@@ -15,9 +15,10 @@ class TestParentModel extends Model
 {
     public function __construct(TestParentSchema $schema, TestPersonModel $child, TestPersonModel $parent)
     {
-        $record = new Record($schema);
-        $record['child_id'] = $child->getId();
-        $record['parent_id'] = $parent->getId();
+        $record = new Record($schema, $this);
+
+        $record->associate('child', $child);
+        $record->associate('parent', $parent);
 
         parent::__construct($record);
     }

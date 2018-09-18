@@ -29,13 +29,14 @@ class Record implements \ArrayAccess
 
     private $model;
 
-    public function __construct(Schema $schema)
+    public function __construct(Schema $schema, Model $model = null)
     {
         $this->schema = $schema;
         $this->values = array_fill_keys($schema->getFields(), null);
         $this->state = self::STATE_INSERT;
         $this->changed = [];
         $this->referencedRecords = [];
+        $this->model = $model;
     }
 
     public function getPrimaryKey(): array
@@ -117,6 +118,53 @@ class Record implements \ArrayAccess
         }
 
         return $this->referencedRecords[$name];
+    }
+
+    public function associate(string $name, Model $model): void
+    {
+        $relationship = $this->getSchema()->getRelationship($name);
+
+        if (!$relationship->isUniqueRelationship()) {
+            throw new \InvalidArgumentException('A single model can only be associated to an unique relationships');
+        }
+
+        $keys = $relationship->getFields();
+        $fields = $relationship->getReferencedFields();
+        $record = $model->getDatabaseRecord();
+
+        if ($record->getSchema() !== $relationship->getReferencedSchema()) {
+            throw new \InvalidArgumentException('The associated model has a record in unexpected schema');
+        }
+
+        while ($keys) {
+            $value = $record[array_pop($fields)];
+
+            if ($value === null) {
+                throw new \RuntimeException('Cannot associate to models with nulls in referenced fields');
+            }
+
+            $this[array_pop($keys)] = $value;
+        }
+
+        $this->referencedRecords[$relationship->getName()] = [$record];
+        $reverse = $relationship->getReverseRelationship();
+
+        if ($reverse->isUniqueRelationship()) {
+            $record->referencedRecords[$reverse->getName()] = [$this];
+        } elseif ($record->hasReferencedRecords($reverse->getName())) {
+            $record->referencedRecords[$reverse->getName()][] = $this;
+        }
+    }
+
+    public function addAssociation(string $name, Model $model): void
+    {
+        $relationship = $this->getSchema()->getRelationship($name);
+
+        if ($relationship->isUniqueRelationship()) {
+            throw new \InvalidArgumentException('Cannot add a new model to an unique relationship');
+        }
+
+        $model->getDatabaseRecord()->associate($relationship->getReverseRelationship()->getName(), $this->getModel());
     }
 
     public function getRelatedModel(string $name): ?Model

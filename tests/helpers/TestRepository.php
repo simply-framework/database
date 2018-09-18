@@ -11,25 +11,33 @@ use Simply\Database\Repository;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class TestPersonRepository extends Repository
+class TestRepository extends Repository
 {
     private $personSchema;
     private $parentSchema;
+    private $houseSchema;
 
     public function __construct(
         Connection $connection,
         TestPersonSchema $personSchema,
-        TestParentSchema $parentSchema
+        TestParentSchema $parentSchema,
+        TestHouseSchema $houseSchema
     ) {
         parent::__construct($connection);
 
         $this->personSchema = $personSchema;
         $this->parentSchema = $parentSchema;
+        $this->houseSchema = $houseSchema;
     }
 
     public function createPerson(string $firstName, string $lastName, int $age): TestPersonModel
     {
         return new TestPersonModel($this->personSchema, $firstName, $lastName, $age);
+    }
+
+    public function createHouse(string $street): TestHouseModel
+    {
+        return new TestHouseModel($this->houseSchema, $street);
     }
 
     public function findById(int $id): ?TestPersonModel
@@ -86,6 +94,11 @@ class TestPersonRepository extends Repository
         $this->save($model);
     }
 
+    public function saveHouse(TestHouseModel $model): void
+    {
+        $this->save($model);
+    }
+
     public function makeParent(TestPersonModel $child, TestPersonModel $parent)
     {
         $relationship = new TestParentModel($this->parentSchema, $child, $parent);
@@ -97,6 +110,8 @@ class TestPersonRepository extends Repository
         $this->fillRelationships($people, [
             'parents.parent.children.child',
             'children.child.parents.parent',
+            'spouse.spouse',
+            'home.residents',
         ]);
     }
 

@@ -30,9 +30,18 @@ class MySqlIntegrationTest extends IntegrationTestCase
 
         $personTable = $this->personSchema->getTable();
         $parentTable = $this->parentSchema->getTable();
+        $houseTable = $this->houseSchema->getTable();
 
         $queries[] = "DROP TABLE IF EXISTS `$parentTable`";
         $queries[] = "DROP TABLE IF EXISTS `$personTable`";
+        $queries[] = "DROP TABLE IF EXISTS `$houseTable`";
+
+        $queries[] = <<<SQL
+CREATE TABLE `$houseTable` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `street` TEXT NOT NULL
+)
+SQL;
 
         $queries[] = <<<SQL
 CREATE TABLE `$personTable` (
@@ -41,7 +50,11 @@ CREATE TABLE `$personTable` (
   `last_name` TEXT NOT NULL,
   `age` INT NOT NULL,
   `weight` DECIMAL(5,2) NULL,
-  `license` BOOL DEFAULT FALSE
+  `license` BOOL DEFAULT FALSE,
+  `spouse_id` INT NULL,
+  `home_id` INT NULL,
+  CONSTRAINT FOREIGN KEY (`spouse_id`) REFERENCES `$personTable` (`id`),
+  CONSTRAINT FOREIGN KEY (`home_id`) REFERENCES `$houseTable` (`id`)
 )
 SQL;
 

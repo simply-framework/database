@@ -23,6 +23,9 @@ abstract class IntegrationTestCase extends TestCase
     /** @var TestParentSchema */
     protected $parentSchema;
 
+    /** @var TestHouseSchema */
+    protected $houseSchema;
+
     abstract protected function createConnection(): Connection;
     abstract protected function setUpDatabase(Connection $connection): void;
 
@@ -32,17 +35,19 @@ abstract class IntegrationTestCase extends TestCase
 
         $this->personSchema = new TestPersonSchema($container);
         $this->parentSchema = new TestParentSchema($container);
+        $this->houseSchema = new TestHouseSchema($container);
 
         $container[TestPersonSchema::class] = $this->personSchema;
         $container[TestParentSchema::class] = $this->parentSchema;
+        $container[TestHouseSchema::class] = $this->houseSchema;
 
         $this->connection = $this->createConnection();
         $this->setUpDatabase($this->connection);
     }
 
-    private function getTestPersonRepository(): TestPersonRepository
+    private function getTestPersonRepository(): TestRepository
     {
-        return new TestPersonRepository($this->connection, $this->personSchema, $this->parentSchema);
+        return new TestRepository($this->connection, $this->personSchema, $this->parentSchema, $this->houseSchema);
     }
 
     public function testCrudOperations(): void
@@ -161,17 +166,26 @@ abstract class IntegrationTestCase extends TestCase
         $this->assertCount(0, $repository->findByHasLicense(false));
     }
 
-    public function testLoadingRelationships(): void
+    public function testRelationships(): void
     {
         $repository = $this->getTestPersonRepository();
+
+        $home = $repository->createHouse('Anonymous Street');
+        $repository->saveHouse($home);
 
         $jane = $repository->createPerson('Jane', 'Doe', 20);
         $john = $repository->createPerson('John', 'Doe', 20);
         $mama = $repository->createPerson('Mama', 'Doe', 40);
         $papa = $repository->createPerson('Papa', 'Doe', 40);
 
+        $home->movePeople([$jane, $john, $mama, $papa]);
+
         $repository->savePerson($jane);
         $repository->savePerson($john);
+        $repository->savePerson($mama);
+        $repository->savePerson($papa);
+
+        $mama->marry($papa);
         $repository->savePerson($mama);
         $repository->savePerson($papa);
 
@@ -184,37 +198,33 @@ abstract class IntegrationTestCase extends TestCase
 
         $repository->loadFamily([$person]);
 
+        $this->assertSame('Anonymous Street', $person->getHome()->getStreet());
+        $this->assertCount(4, $person->getHome()->getResidents());
+
         $firstName = function (TestPersonModel $model): string {
             return $model->getFirstName();
-        };
-
-        $childRecords = function (TestPersonModel $model): array {
-            $childRecords = [];
-
-            foreach ($model->getChildren() as $child) {
-                $childRecords[] = $child->getDatabaseRecord();
-            }
-
-            return $childRecords;
         };
 
         $parents = $person->getParents();
 
         $this->assertCount(2, $parents);
 
+        $residentNames = array_map($firstName, $person->getHome()->getResidents());
         $names = array_map($firstName, $parents);
         sort($names);
+        sort($residentNames);
 
         $this->assertSame(['Mama', 'Papa'], $names);
+        $this->assertSame(['Jane', 'John', 'Mama', 'Papa'], $residentNames);
 
         foreach ($parents as $parent) {
-            $this->assertTrue(\in_array($person->getDatabaseRecord(), $childRecords($parent), true));
+            $this->assertContains($person, $parent->getChildren());
         }
 
         $repository->loadFamily($parents);
 
         foreach ($parents as $parent) {
-            $this->assertTrue(\in_array($person->getDatabaseRecord(), $childRecords($parent), true));
+            $this->assertContains($person, $parent->getChildren());
         }
     }
 

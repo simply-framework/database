@@ -18,7 +18,7 @@ class TestPersonSchema extends Schema
 
     protected $primaryKey = 'id';
 
-    protected $fields = ['id', 'first_name', 'last_name', 'age', 'weight', 'license'];
+    protected $fields = ['id', 'first_name', 'last_name', 'age', 'weight', 'license', 'spouse_id', 'home_id'];
 
     protected $relationships = [
         'parents' => [
@@ -30,6 +30,21 @@ class TestPersonSchema extends Schema
             'key' => 'id',
             'schema' => TestParentSchema::class,
             'field' => 'parent_id',
+        ],
+        'spouse' => [
+            'key' => 'spouse_id',
+            'schema' => TestPersonSchema::class,
+            'field' => 'id',
+        ],
+        'spouse_alt' => [
+            'key' => 'id',
+            'schema' => TestPersonSchema::class,
+            'field' => 'spouse_id',
+        ],
+        'home' => [
+            'key' => 'home_id',
+            'schema' => TestHouseSchema::class,
+            'field' => 'id',
         ],
     ];
 }

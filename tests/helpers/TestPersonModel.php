@@ -15,7 +15,7 @@ class TestPersonModel extends Model
 {
     public function __construct(TestPersonSchema $schema, string $firstName, string $lastName, int $age)
     {
-        $record = new Record($schema);
+        $record = new Record($schema, $this);
         $record['first_name'] = $firstName;
         $record['last_name'] = $lastName;
         $record['age'] = $age;
@@ -78,5 +78,16 @@ class TestPersonModel extends Model
     public function getChildren(): array
     {
         return $this->record->getRelatedModelsByProxy('children', 'child');
+    }
+
+    public function marry(TestPersonModel $person): void
+    {
+        $this->record->associate('spouse', $person);
+        $person->record->associate('spouse', $this);
+    }
+
+    public function getHome(): TestHouseModel
+    {
+        return $this->record->getRelatedModel('home');
     }
 }
