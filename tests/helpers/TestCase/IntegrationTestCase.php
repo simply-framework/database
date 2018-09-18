@@ -1,10 +1,15 @@
 <?php
 
-namespace Simply\Database\Test;
+namespace Simply\Database\Test\TestCase;
 
 use PHPUnit\Framework\TestCase;
 use Simply\Container\Container;
 use Simply\Database\Connection\Connection;
+use Simply\Database\Test\TestHouseSchema;
+use Simply\Database\Test\TestParentSchema;
+use Simply\Database\Test\TestPersonModel;
+use Simply\Database\Test\TestPersonSchema;
+use Simply\Database\Test\TestRepository;
 
 /**
  * IntegrationTestCase.

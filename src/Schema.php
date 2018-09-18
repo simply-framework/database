@@ -95,7 +95,7 @@ abstract class Schema
 
     public function getRecord(array $values): Record
     {
-        $record = new Record($this);
+        $record = $this->createRecord();
         $record->setDatabaseValues($values);
 
         return $record;
@@ -119,5 +119,10 @@ abstract class Schema
         }
 
         return $this->getRecord($values)->getModel();
+    }
+
+    public function createRecord(Model $model = null): Record
+    {
+        return new Record($this, $model);
     }
 }

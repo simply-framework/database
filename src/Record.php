@@ -133,7 +133,7 @@ class Record implements \ArrayAccess
         $record = $model->getDatabaseRecord();
 
         if ($record->getSchema() !== $relationship->getReferencedSchema()) {
-            throw new \InvalidArgumentException('The associated model has a record in unexpected schema');
+            throw new \InvalidArgumentException('The associated model has a record with an unexpected schema');
         }
 
         while ($keys) {

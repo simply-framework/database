@@ -4,7 +4,7 @@ namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
 use Simply\Database\Connection\MySqlConnection;
-use Simply\Database\Test\IntegrationTestCase;
+use Simply\Database\Test\TestCase\IntegrationTestCase;
 
 /**
  * MySqlIntegrationTest.

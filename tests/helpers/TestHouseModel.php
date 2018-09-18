@@ -3,7 +3,6 @@
 namespace Simply\Database\Test;
 
 use Simply\Database\Model;
-use Simply\Database\Record;
 
 /**
  * TestHouseModel.
@@ -15,7 +14,7 @@ class TestHouseModel extends Model
 {
     public function __construct(TestHouseSchema $schema, string $street)
     {
-        $record = new Record($schema, $this);
+        $record = $schema->createRecord($this);
         $record['street'] = $street;
 
         parent::__construct($record);

@@ -3,7 +3,6 @@
 namespace Simply\Database\Test;
 
 use Simply\Database\Model;
-use Simply\Database\Record;
 
 /**
  * TestModel.
@@ -15,7 +14,8 @@ class TestPersonModel extends Model
 {
     public function __construct(TestPersonSchema $schema, string $firstName, string $lastName, int $age)
     {
-        $record = new Record($schema, $this);
+        $record = $schema->createRecord($this);
+
         $record['first_name'] = $firstName;
         $record['last_name'] = $lastName;
         $record['age'] = $age;

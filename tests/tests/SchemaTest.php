@@ -2,11 +2,8 @@
 
 namespace Simply\Database;
 
-use PHPUnit\Framework\TestCase;
 use Simply\Container\Container;
-use Simply\Database\Test\TestHouseSchema;
-use Simply\Database\Test\TestParentSchema;
-use Simply\Database\Test\TestPersonSchema;
+use Simply\Database\Test\TestCase\UnitTestCase;
 
 /**
  * SchemaTest.
@@ -14,19 +11,8 @@ use Simply\Database\Test\TestPersonSchema;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class SchemaTest extends TestCase
+class SchemaTest extends UnitTestCase
 {
-    private function getPersonSchema(): TestPersonSchema
-    {
-        $container = new Container();
-        $schema = new TestPersonSchema($container);
-
-        $container[TestPersonSchema::class] = $schema;
-        $container[TestParentSchema::class] = new TestParentSchema($container);
-        $container[TestHouseSchema::class] = new TestHouseSchema($container);
-
-        return $schema;
-    }
     public function testInvalidRelationship(): void
     {
         $schema = $this->getPersonSchema();
@@ -164,7 +150,7 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
         $relationship = $schema->getRelationship('home');
 
-        $house = new Record($relationship->getReferencedSchema());
+        $house = $relationship->getReferencedSchema()->createRecord();
 
         $this->expectException(\InvalidArgumentException::class);
         $relationship->fillRelationship([$house], []);
@@ -175,8 +161,8 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
         $relationship = $schema->getRelationship('home');
 
-        $person = new Record($schema);
-        $otherPerson = new Record($schema);
+        $person = $schema->createRecord();
+        $otherPerson = $schema->createRecord();
 
         $this->expectException(\InvalidArgumentException::class);
         $relationship->fillRelationship([$person], [$otherPerson]);
@@ -187,10 +173,10 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
         $relationship = $schema->getRelationship('spouse_reverse');
 
-        $person = new Record($schema);
+        $person = $schema->createRecord();
         $person['id'] = 1;
 
-        $wife = new Record($schema);
+        $wife = $schema->createRecord();
         $wife['spouse_id'] = 1;
 
         $husband = new Record($schema);
@@ -205,13 +191,13 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
         $relationship = $schema->getRelationship('spouse');
 
-        $person = new Record($schema);
+        $person = $schema->createRecord();
         $person['spouse_id'] = 1;
 
-        $wife = new Record($schema);
+        $wife = $schema->createRecord();
         $wife['id'] = 1;
 
-        $husband = new Record($schema);
+        $husband = $schema->createRecord();
         $husband['id'] = 1;
 
         $this->expectException(\InvalidArgumentException::class);
@@ -223,15 +209,15 @@ class SchemaTest extends TestCase
         $schema = $this->getPersonSchema();
         $relationship = $schema->getRelationship('spouse');
 
-        $personA = new Record($schema);
+        $personA = $schema->createRecord();
         $personA['id'] = 1;
         $personA['spouse_id'] = 2;
 
-        $personB = new Record($schema);
+        $personB = $schema->createRecord();
         $personB['id'] = 2;
         $personB['spouse_id'] = 1;
 
-        $personC = new Record($schema);
+        $personC = $schema->createRecord();
 
         $relationship->fillRelationship([$personA, $personB, $personC], [$personA, $personB, $personC]);
 
