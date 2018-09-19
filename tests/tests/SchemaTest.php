@@ -118,27 +118,7 @@ class SchemaTest extends UnitTestCase
 
     public function testTryingToFillCompositeForeignKey(): void
     {
-        $container = new Container();
-        $schema = new class($container) extends Schema {
-            protected $model = 'TestModel';
-            protected $primaryKey = ['order_id', 'product_id'];
-            protected $fields = ['order_id', 'product_id', 'replaced_order_id', 'replaced_product_id'];
-            protected $table = 'test';
-            protected $relationships = [
-                'replacement' => [
-                    'key' => ['order_id', 'product_id'],
-                    'schema' => 'TestSchema',
-                    'field' => ['replaced_order_id', 'replaced_product_id'],
-                ],
-                'replaced' => [
-                    'key' => ['replaced_order_id', 'replaced_product_id'],
-                    'schema' => 'TestSchema',
-                    'field' => ['order_id', 'product_id'],
-                ],
-            ];
-        };
-
-        $container['TestSchema'] = $schema;
+        $schema = $this->getCompositeForeignKeySchema();
         $relationship = $schema->getRelationship('replaced');
 
         $this->expectException(\RuntimeException::class);

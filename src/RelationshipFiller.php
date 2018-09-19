@@ -62,7 +62,7 @@ class RelationshipFiller
             $schemaId = $this->getSchemaId($parent);
 
             if (\count($fields) > 1) {
-                throw new \RuntimeException('Filling relationships for composite foreign keys is not supported');
+                throw new \InvalidArgumentException('Filling relationships for composite foreign keys is not supported');
             }
 
             $isPrimaryReference = $fields === $parent->getPrimaryKey();

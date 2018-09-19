@@ -10,7 +10,7 @@ use Simply\Database\Connection\Connection;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class Repository
+abstract class Repository
 {
     private $connection;
 
@@ -36,16 +36,10 @@ class Repository
     protected function findOne(Schema $schema, array $conditions): ?Model
     {
         $keys = $schema->getPrimaryKey();
+        $order = array_fill_keys($keys, Connection::ORDER_ASCENDING);
 
-        if ($keys) {
-            $order = array_fill_keys($keys, Connection::ORDER_ASCENDING);
-            $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions, $order, 1);
-        } else {
-            $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions);
-        }
-
+        $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions, $order, 1);
         $result->setFetchMode(\PDO::FETCH_ASSOC);
-
         $row = $result->fetch();
 
         return $row ? $schema->createModel($row) : null;

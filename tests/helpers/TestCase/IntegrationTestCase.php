@@ -281,6 +281,19 @@ abstract class IntegrationTestCase extends TestCase
         $this->connection->select(['id'], $this->personSchema->getTable(), [], ['id' => 0]);
     }
 
+    public function testSavingDeletedRecord()
+    {
+        $repository = $this->getTestPersonRepository();
+        $person = $repository->createPerson('Jane', 'Doe', 20);
+        $repository->savePerson($person);
+        $repository->deletePerson($person);
+
+        $this->assertCount(0, $repository->findByFirstName('Jane'));
+
+        $this->expectException(\RuntimeException::class);
+        $repository->savePerson($person);
+    }
+
     public function testUnlimitedWithoutSortOrder()
     {
         $repository = $this->getTestPersonRepository();
