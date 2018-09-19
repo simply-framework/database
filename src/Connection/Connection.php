@@ -19,4 +19,6 @@ interface Connection
     public function update(string $table, array $values, array $where): \PDOStatement;
     public function delete(string $table, array $where): \PDOStatement;
     public function query(string $sql, array $parameters = []): \PDOStatement;
+    public function formatTable(string $table, string $alias = ''): string;
+    public function formatFields(array $fields, string $table = '', string $prefix = ''): string;
 }

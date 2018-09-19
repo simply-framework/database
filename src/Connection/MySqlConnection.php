@@ -98,21 +98,40 @@ class MySqlConnection implements Connection
         ]), $parameters);
     }
 
-    private function formatFields(array $fields): string
+    public function formatFields(array $fields, string $table = '', string $prefix = ''): string
     {
         if (!$fields) {
             throw new \InvalidArgumentException('No fields provided for the query');
         }
 
-        return implode(', ', array_map(function (string $field) {
-            return $this->escapeIdentifier($field);
+        $format = '%2$s';
+
+        if ($table !== '') {
+            $format = '%1$s.' . $format;
+        }
+
+        if ($prefix !== '') {
+            $format .= ' AS %3$s';
+        }
+
+        return implode(', ', array_map(function (string $field) use ($format, $table, $prefix) {
+            return sprintf(
+                $format,
+                $this->escapeIdentifier($table),
+                $this->escapeIdentifier($field),
+                $this->escapeIdentifier($prefix . $field)
+            );
         }, $fields));
     }
 
-    private function formatTable(string $table): string
+    public function formatTable(string $table, string $alias = ''): string
     {
         if ($table === '') {
             throw new \InvalidArgumentException('No table provided for the query');
+        }
+
+        if ($alias !== '') {
+            return sprintf('%s AS %s', $this->escapeIdentifier($table), $this->escapeIdentifier($alias));
         }
 
         return $this->escapeIdentifier($table);

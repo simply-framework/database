@@ -151,4 +151,9 @@ abstract class Repository
         $filler = new RelationshipFiller($this->connection);
         $filler->fill($records, $relationships);
     }
+
+    protected function query(string $sql): Query
+    {
+        return new Query($this->connection, $sql);
+    }
 }

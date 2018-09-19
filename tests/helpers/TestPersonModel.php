@@ -86,6 +86,11 @@ class TestPersonModel extends Model
         $person->record->associate('spouse', $this);
     }
 
+    public function getSpouse(): ?TestPersonModel
+    {
+        return $this->record->getRelatedModel('spouse');
+    }
+
     public function getHome(): TestHouseModel
     {
         return $this->record->getRelatedModel('home');

@@ -25,12 +25,15 @@ abstract class Schema
 
     private $relationshipCache;
 
+    private $prefixCache;
+
     private $container;
 
     public function __construct(ContainerInterface $container)
     {
         $this->relationshipCache = [];
         $this->container = $container;
+        $this->prefixCache = [];
     }
 
     public function getTable(): string
@@ -106,7 +109,20 @@ abstract class Schema
         return $this->model::createFromDatabaseRecord($record);
     }
 
-    public function createModel(array $row, string $prefix = ''): Model
+    public function createModel(array $row, string $prefix = '', array $relationships = []): Model
+    {
+        $record = $this->getRecord($this->getPrefixedFields($row, $prefix));
+
+        foreach ($relationships as $key => $name) {
+            $relationship = $this->getRelationship($name);
+            $schema = $relationship->getReferencedSchema();
+            $relationship->fillSingleRecord($record, $schema->getRecord($schema->getPrefixedFields($row, $key)));
+        }
+
+        return $record->getModel();
+    }
+
+    private function getPrefixedFields(array $row, string $prefix): array
     {
         $values = [];
 
@@ -118,7 +134,7 @@ abstract class Schema
             }
         }
 
-        return $this->getRecord($values)->getModel();
+        return $values;
     }
 
     public function createRecord(Model $model = null): Record

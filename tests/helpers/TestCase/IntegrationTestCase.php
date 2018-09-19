@@ -55,6 +55,33 @@ abstract class IntegrationTestCase extends TestCase
         return new TestRepository($this->connection, $this->personSchema, $this->parentSchema, $this->houseSchema);
     }
 
+    private function setUpFamily(TestRepository $repository): void
+    {
+        $home = $repository->createHouse('Anonymous Street');
+        $repository->saveHouse($home);
+
+        $jane = $repository->createPerson('Jane', 'Doe', 20);
+        $john = $repository->createPerson('John', 'Doe', 20);
+        $mama = $repository->createPerson('Mama', 'Doe', 40);
+        $papa = $repository->createPerson('Papa', 'Doe', 40);
+
+        $home->movePeople([$jane, $john, $mama, $papa]);
+
+        $repository->savePerson($jane);
+        $repository->savePerson($john);
+        $repository->savePerson($mama);
+        $repository->savePerson($papa);
+
+        $mama->marry($papa);
+        $repository->savePerson($mama);
+        $repository->savePerson($papa);
+
+        $repository->makeParent($jane, $mama);
+        $repository->makeParent($jane, $papa);
+        $repository->makeParent($john, $mama);
+        $repository->makeParent($john, $papa);
+    }
+
     public function testCrudOperations(): void
     {
         $repository = $this->getTestPersonRepository();
@@ -174,30 +201,7 @@ abstract class IntegrationTestCase extends TestCase
     public function testRelationships(): void
     {
         $repository = $this->getTestPersonRepository();
-
-        $home = $repository->createHouse('Anonymous Street');
-        $repository->saveHouse($home);
-
-        $jane = $repository->createPerson('Jane', 'Doe', 20);
-        $john = $repository->createPerson('John', 'Doe', 20);
-        $mama = $repository->createPerson('Mama', 'Doe', 40);
-        $papa = $repository->createPerson('Papa', 'Doe', 40);
-
-        $home->movePeople([$jane, $john, $mama, $papa]);
-
-        $repository->savePerson($jane);
-        $repository->savePerson($john);
-        $repository->savePerson($mama);
-        $repository->savePerson($papa);
-
-        $mama->marry($papa);
-        $repository->savePerson($mama);
-        $repository->savePerson($papa);
-
-        $repository->makeParent($jane, $mama);
-        $repository->makeParent($jane, $papa);
-        $repository->makeParent($john, $mama);
-        $repository->makeParent($john, $papa);
+        $this->setUpFamily($repository);
 
         $person = $repository->findByFirstName('John')[0];
 
@@ -304,5 +308,46 @@ abstract class IntegrationTestCase extends TestCase
         $results = $this->connection->select(['id'], $this->personSchema->getTable(), [], [], 1);
 
         $this->assertCount(2, iterator_to_array($results));
+    }
+
+    public function testCustomQuery()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $repository->savePerson($repository->createPerson('Elizabeth', 'Jones', 35));
+        $repository->savePerson($repository->createPerson('Carmen', 'Martinez', 47));
+        $repository->savePerson($repository->createPerson('Isabell', 'Williams', 45));
+        $repository->savePerson($repository->createPerson('Corina', 'Keith', 64));
+        $repository->savePerson($repository->createPerson('Ruth', 'Ward', 44));
+        $repository->savePerson($repository->createPerson('Frances', 'Gray', 41));
+
+        foreach ($repository->findYoungerThan(46) as $person) {
+            $ages[] = $person->getAge();
+        }
+
+        sort($ages);
+
+        $this->assertSame([35, 41, 44, 45], $ages);
+    }
+
+    public function testIterationWithRelation()
+    {
+        $repository = $this->getTestPersonRepository();
+        $this->setUpFamily($repository);
+        $count = 0;
+
+        foreach ($repository->iterateWithSpouse() as $person) {
+            $count++;
+
+            if ($person->getFirstName() === 'Mama') {
+                $this->assertSame('Papa', $person->getSpouse()->getFirstName());
+            } elseif ($person->getFirstName() === 'Papa') {
+                $this->assertSame('Mama', $person->getSpouse()->getFirstName());
+            } else {
+                $this->assertNull($person->getSpouse());
+            }
+        }
+
+        $this->assertSame(4, $count);
     }
 }

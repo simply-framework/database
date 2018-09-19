@@ -195,4 +195,32 @@ class Relationship
             }
         }
     }
+
+    public function fillSingleRecord(Record $record, Record $referencedRecord): void
+    {
+        if (!$this->isUniqueRelationship()) {
+            throw new \LogicException('Only unique relationships can be filled with single records');
+        }
+
+        if ($referencedRecord->isEmpty()) {
+            $record->setReferencedRecords($this->getName(), []);
+            return;
+        }
+
+        $keys = $this->getFields();
+        $fields = $this->getReferencedFields();
+
+        while ($keys) {
+            if ((string) $record[array_pop($keys)] !== (string) $referencedRecord[array_pop($fields)]) {
+                throw new \LogicException('Tried to fill a record with a record that is not the referenced record');
+            }
+        }
+
+        $record->setReferencedRecords($this->getName(), [$referencedRecord]);
+        $reverse = $this->getReverseRelationship();
+
+        if ($reverse->isUniqueRelationship()) {
+            $referencedRecord->setReferencedRecords($reverse->getName(), [$record]);
+        }
+    }
 }

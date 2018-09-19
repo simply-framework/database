@@ -164,9 +164,18 @@ class RecordTest extends UnitTestCase
         $person = $schema->createRecord();
 
         $values = array_fill_keys(array_reverse($schema->getFields()), 1);
+        $person->setDatabaseValues($values);
+
+        $this->assertSame($schema->getFields(), array_keys($person->getDatabaseValues()));
+    }
+
+    public function testMissingDatabaseValues(): void
+    {
+        $schema = $this->getPersonSchema();
+        $person = $schema->createRecord();
 
         $this->expectException(\InvalidArgumentException::class);
-        $person->setDatabaseValues($values);
+        $person->setDatabaseValues(['id' => 1]);
     }
 
     public function testInvalidProxyRelation(): void

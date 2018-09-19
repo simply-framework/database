@@ -119,4 +119,29 @@ class TestRepository extends Repository
     {
         $this->delete($model);
     }
+
+    /**
+     * @param int $age
+     * @return TestPersonModel[]
+     */
+    public function findYoungerThan(int $age): array
+    {
+        return $this->query('SELECT {fields} FROM {table} WHERE age < ?')
+            ->withSchema($this->personSchema)
+            ->withParameters([$age])
+            ->fetchModels();
+    }
+
+    /**
+     * @return \Generator|TestPersonModel[]
+     */
+    public function iterateWithSpouse(): \Generator
+    {
+        return $this->query(
+            'SELECT {p.fields}, {s.fields} FROM {p.table} LEFT JOIN {s.table} ON s.id = p.spouse_id'
+        )
+            ->withSchema($this->personSchema, 'p')
+            ->withSchema($this->personSchema, 's')
+            ->generateModels('p', ['s' => 'spouse']);
+    }
 }

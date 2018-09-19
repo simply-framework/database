@@ -48,6 +48,17 @@ class Record implements \ArrayAccess
         return $this->primaryKey;
     }
 
+    public function isEmpty(): bool
+    {
+        foreach ($this->values as $value) {
+            if ($value !== null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function isNew(): bool
     {
         return $this->state === self::STATE_INSERT;
@@ -255,7 +266,11 @@ class Record implements \ArrayAccess
     public function setDatabaseValues(array $row)
     {
         if (array_keys($row) !== array_keys($this->values)) {
-            throw new \InvalidArgumentException('Invalid set of record database values provided');
+            if (array_diff_key($row, $this->values) !== [] || \count($row) !== \count($this->values)) {
+                throw new \InvalidArgumentException('Invalid set of record database values provided');
+            }
+
+            $row = array_replace($this->values, $row);
         }
 
         $this->values = $row;
