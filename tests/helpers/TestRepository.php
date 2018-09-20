@@ -132,6 +132,14 @@ class TestRepository extends Repository
             ->fetchModels();
     }
 
+    public function countYoungerThan(int $age): int
+    {
+        return \count($this->query('SELECT id FROM {p.table} WHERE age < :age')
+            ->withSchema($this->personSchema, 'p')
+            ->withParameters(['age' => $age])
+            ->fetchRows());
+    }
+
     /**
      * @return \Generator|TestPersonModel[]
      */
@@ -142,6 +150,31 @@ class TestRepository extends Repository
         )
             ->withSchema($this->personSchema, 'p')
             ->withSchema($this->personSchema, 's')
-            ->generateModels('p', ['s' => 'spouse']);
+            ->generateCallback(function (array $row): TestPersonModel {
+                $person = $this->personSchema->createRecordFromRow($row, 'p_');
+                $spouse = $this->personSchema->createRecordFromRow($row, 's_');
+
+                $relationship = $this->personSchema->getRelationship('spouse');
+                $relationship->fillSingleRecord($person, $spouse);
+
+                if (!$spouse->isEmpty()) {
+                    $relationship->fillSingleRecord($spouse, $person);
+                }
+
+                return $person->getModel();
+            });
+    }
+
+    /**
+     * @return \Generator|TestPersonModel[]
+     */
+    public function iterateWithHouse(): \Generator
+    {
+        return $this->query(
+            'SELECT {p.fields}, {h.fields} FROM {p.table} LEFT JOIN {h.table} ON h.id = p.home_id'
+        )
+            ->withSchema($this->personSchema, 'p')
+            ->withSchema($this->houseSchema, 'h')
+            ->generateModels('p', ['h' => 'home']);
     }
 }

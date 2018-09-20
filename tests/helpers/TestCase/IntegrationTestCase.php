@@ -328,9 +328,11 @@ abstract class IntegrationTestCase extends TestCase
         sort($ages);
 
         $this->assertSame([35, 41, 44, 45], $ages);
+        $this->assertSame(1, $repository->countYoungerThan(40));
+        $this->assertSame(5, $repository->countYoungerThan(50));
     }
 
-    public function testIterationWithRelation()
+    public function testIterationWithOneToOneRelation()
     {
         $repository = $this->getTestPersonRepository();
         $this->setUpFamily($repository);
@@ -346,6 +348,20 @@ abstract class IntegrationTestCase extends TestCase
             } else {
                 $this->assertNull($person->getSpouse());
             }
+        }
+
+        $this->assertSame(4, $count);
+    }
+
+    public function testIterationWithRelation()
+    {
+        $repository = $this->getTestPersonRepository();
+        $this->setUpFamily($repository);
+        $count = 0;
+
+        foreach ($repository->iterateWithHouse() as $person) {
+            $count++;
+            $this->assertSame('Anonymous Street', $person->getHome()->getStreet());
         }
 
         $this->assertSame(4, $count);

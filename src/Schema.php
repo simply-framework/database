@@ -96,7 +96,12 @@ abstract class Schema
         return $this->container->get($name);
     }
 
-    public function getRecord(array $values): Record
+    public function createRecord(Model $model = null): Record
+    {
+        return new Record($this, $model);
+    }
+
+    public function createRecordFromValues(array $values): Record
     {
         $record = $this->createRecord();
         $record->setDatabaseValues($values);
@@ -104,25 +109,7 @@ abstract class Schema
         return $record;
     }
 
-    public function getModel(Record $record): Model
-    {
-        return $this->model::createFromDatabaseRecord($record);
-    }
-
-    public function createModel(array $row, string $prefix = '', array $relationships = []): Model
-    {
-        $record = $this->getRecord($this->getPrefixedFields($row, $prefix));
-
-        foreach ($relationships as $key => $name) {
-            $relationship = $this->getRelationship($name);
-            $schema = $relationship->getReferencedSchema();
-            $relationship->fillSingleRecord($record, $schema->getRecord($schema->getPrefixedFields($row, $key)));
-        }
-
-        return $record->getModel();
-    }
-
-    private function getPrefixedFields(array $row, string $prefix): array
+    public function createRecordFromRow(array $row, string $prefix = ''): Record
     {
         $values = [];
 
@@ -134,11 +121,24 @@ abstract class Schema
             }
         }
 
-        return $values;
+        return $this->createRecordFromValues($values);
     }
 
-    public function createRecord(Model $model = null): Record
+    public function createModel(Record $record): Model
     {
-        return new Record($this, $model);
+        return $this->model::createFromDatabaseRecord($record);
+    }
+
+    public function createModelFromRow(array $row, string $prefix = '', array $relationships = []): Model
+    {
+        $record = $this->createRecordFromRow($row, $prefix);
+
+        foreach ($relationships as $key => $name) {
+            $relationship = $this->getRelationship($name);
+            $schema = $relationship->getReferencedSchema();
+            $relationship->fillSingleRecord($record, $schema->createRecordFromRow($row, $key));
+        }
+
+        return $record->getModel();
     }
 }

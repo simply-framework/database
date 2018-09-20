@@ -137,7 +137,7 @@ class Query
         }
 
         foreach ($this->fetchResult() as $row) {
-            yield $schema->createModel($row, $prefix, $modelRelationships);
+            yield $schema->createModelFromRow($row, $prefix, $modelRelationships);
         }
     }
 

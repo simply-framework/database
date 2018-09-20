@@ -94,7 +94,7 @@ class Record implements \ArrayAccess
     public function getModel(): Model
     {
         if ($this->model === null) {
-            $this->model = $this->schema->getModel($this);
+            $this->model = $this->schema->createModel($this);
         }
 
         return $this->model;

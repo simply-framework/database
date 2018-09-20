@@ -152,7 +152,7 @@ class RelationshipFiller
             return $this->cache[$schemaId][$recordId];
         }
 
-        $record = $schema->getRecord($row);
+        $record = $schema->createRecordFromValues($row);
         $this->cache[$schemaId][$recordId] = $record;
         return $record;
     }

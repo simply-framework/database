@@ -205,4 +205,43 @@ class SchemaTest extends UnitTestCase
         $this->assertSame([$personA], $personB->getReferencedRecords('spouse'));
         $this->assertSame([], $personC->getReferencedRecords('spouse'));
     }
+
+    public function testTryFillingNonUniqueSingleRelatinoship()
+    {
+        $schema = $this->getPersonSchema();
+        $values = [];
+
+        foreach ($schema->getFields() as $field) {
+            $values['p_' . $field] = null;
+        }
+
+        $values['p_id'] = 1;
+
+        foreach ($schema->getRelationship('parents')->getReferencedSchema()->getFields() as $field) {
+            $values['r_' . $field] = null;
+        }
+
+        $values['r_child_id'] = 1;
+
+        $this->expectException(\LogicException::class);
+        $schema->createModelFromRow($values, 'p_', ['r_' => 'parents']);
+    }
+
+    public function testTryFillingANonRelatedRecord()
+    {
+        $schema = $this->getPersonSchema();
+        $values = [];
+
+        foreach ($schema->getFields() as $field) {
+            $values['p_' . $field] = null;
+            $values['s_' . $field] = null;
+        }
+
+        $values['p_id'] = 1;
+        $values['p_spouse_id'] = 2;
+        $values['s_id'] = 3;
+
+        $this->expectException(\LogicException::class);
+        $schema->createModelFromRow($values, 'p_', ['s_' => 'spouse']);
+    }
 }

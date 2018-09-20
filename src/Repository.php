@@ -27,7 +27,7 @@ abstract class Repository
         $models = [];
 
         foreach ($result as $row) {
-            $models[] = $schema->createModel($row);
+            $models[] = $schema->createModelFromRow($row);
         }
 
         return $models;
@@ -42,7 +42,7 @@ abstract class Repository
         $result->setFetchMode(\PDO::FETCH_ASSOC);
         $row = $result->fetch();
 
-        return $row ? $schema->createModel($row) : null;
+        return $row ? $schema->createModelFromRow($row) : null;
     }
 
     protected function findByPrimaryKey(Schema $schema, $values): ?Model
