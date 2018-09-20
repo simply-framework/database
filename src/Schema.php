@@ -15,25 +15,28 @@ abstract class Schema
     /** @var string|Model */
     protected $model;
 
+    /** @var string */
     protected $table;
 
+    /** @var null|string|string[] */
     protected $primaryKey;
 
+    /** @var string[] */
     protected $fields;
 
+    /** @var array[] */
     protected $relationships = [];
 
+    /** @var Relationship[] */
     private $relationshipCache;
 
-    private $prefixCache;
-
+    /** @var ContainerInterface */
     private $container;
 
     public function __construct(ContainerInterface $container)
     {
         $this->relationshipCache = [];
         $this->container = $container;
-        $this->prefixCache = [];
     }
 
     public function getTable(): string
@@ -56,10 +59,6 @@ abstract class Schema
      */
     public function getRelationships(): array
     {
-        if (array_diff_key($this->relationships, $this->relationshipCache) === []) {
-            return $this->relationshipCache;
-        }
-
         $relationships = [];
 
         foreach (array_keys($this->relationships) as $name) {
@@ -111,6 +110,10 @@ abstract class Schema
 
     public function createRecordFromRow(array $row, string $prefix = ''): Record
     {
+        if ($prefix === '') {
+            return $this->createRecordFromValues(array_intersect_key($row, array_flip($this->getFields())));
+        }
+
         $values = [];
 
         foreach ($this->getFields() as $field) {

@@ -12,12 +12,16 @@ use Simply\Database\Connection\Connection;
  */
 class RelationshipFiller
 {
+    /** @var Connection */
     private $connection;
+
+    /** @var Record[] */
     private $cache;
 
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
+        $this->cache = [];
     }
 
     /**

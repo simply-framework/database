@@ -12,6 +12,7 @@ use Simply\Database\Connection\Connection;
  */
 abstract class Repository
 {
+    /** @var Connection */
     private $connection;
 
     public function __construct(Connection $connection)
@@ -45,12 +46,22 @@ abstract class Repository
         return $row ? $schema->createModelFromRow($row) : null;
     }
 
+    /**
+     * @param Schema $schema
+     * @param mixed $values
+     * @return null|Model
+     */
     protected function findByPrimaryKey(Schema $schema, $values): ?Model
     {
         return $this->findOne($schema, $this->getPrimaryKeyCondition($schema, $values));
     }
 
-    protected function getPrimaryKeyCondition(Schema $schema, $values)
+    /**
+     * @param Schema $schema
+     * @param mixed $values
+     * @return array
+     */
+    protected function getPrimaryKeyCondition(Schema $schema, $values): array
     {
         $keys = $schema->getPrimaryKey();
         $condition = [];
@@ -94,7 +105,7 @@ abstract class Repository
         $this->update($model);
     }
 
-    protected function insert(Model $model)
+    protected function insert(Model $model): void
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
@@ -119,7 +130,7 @@ abstract class Repository
         $record->updateState(Record::STATE_INSERT);
     }
 
-    protected function update(Model $model)
+    protected function update(Model $model): void
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
@@ -129,7 +140,7 @@ abstract class Repository
         $record->updateState(Record::STATE_UPDATE);
     }
 
-    protected function delete(Model $model)
+    protected function delete(Model $model): void
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();

@@ -10,12 +10,25 @@ namespace Simply\Database;
  */
 class Relationship
 {
+    /** @var string */
     private $name;
+
+    /** @var Schema */
     private $schema;
+
+    /** @var string[] */
     private $fields;
+
+    /** @var Schema */
     private $referencedSchema;
+
+    /** @var string[] */
     private $referencedFields;
+
+    /** @var bool */
     private $unique;
+
+    /** @var Relationship|null */
     private $reverse;
 
     public function __construct(
@@ -93,7 +106,7 @@ class Relationship
     {
         $reverse = array_filter(
             $this->referencedSchema->getRelationships(),
-            function (Relationship $relationship) {
+            function (Relationship $relationship): bool {
                 return $this->isReverseRelationship($relationship);
             }
         );

@@ -14,10 +14,14 @@ class Query
 {
     /** @var Connection */
     private $connection;
+
+    /** @var string */
     private $sql;
 
     /** @var Schema[] */
     private $schemas;
+
+    /** @var array */
     private $parameters;
 
     public function __construct(Connection $connection, string $sql)

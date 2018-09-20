@@ -10,7 +10,10 @@ namespace Simply\Database\Connection;
  */
 class MySqlConnection implements Connection
 {
+    /** @var callable */
     private $lazyLoader;
+
+    /** @var \PDO|null */
     private $pdo;
 
     public function __construct(string $hostname, string $database, string $username, string $password)
@@ -114,7 +117,7 @@ class MySqlConnection implements Connection
             $format .= ' AS %3$s';
         }
 
-        return implode(', ', array_map(function (string $field) use ($format, $table, $prefix) {
+        return implode(', ', array_map(function (string $field) use ($format, $table, $prefix): string {
             return sprintf(
                 $format,
                 $this->escapeIdentifier($table),
@@ -152,6 +155,12 @@ class MySqlConnection implements Connection
         return implode(' AND ', $clauses);
     }
 
+    /**
+     * @param string $field
+     * @param mixed $value
+     * @param array $parameters
+     * @return string
+     */
     private function formatClause(string $field, $value, array & $parameters): string
     {
         $escaped = $this->escapeIdentifier($field);
@@ -271,6 +280,12 @@ class MySqlConnection implements Connection
         return $query;
     }
 
+    /**
+     * @param \PDOStatement $query
+     * @param int|string $name
+     * @param mixed $value
+     * @return bool
+     */
     private function bindQueryParameter(\PDOStatement $query, $name, $value): bool
     {
         switch (true) {

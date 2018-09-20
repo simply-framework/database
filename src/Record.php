@@ -14,23 +14,30 @@ class Record implements \ArrayAccess
     public const STATE_UPDATE = 2;
     public const STATE_DELETE = 3;
 
+    /** @var Schema */
     private $schema;
 
+    /** @var array */
     private $primaryKey;
 
+    /** @var array */
     private $values;
 
+    /** @var array */
     private $changed;
 
+    /** @var int */
     private $state;
 
     /** @var Record[][] */
     private $referencedRecords;
 
+    /** @var Model|null */
     private $model;
 
     public function __construct(Schema $schema, Model $model = null)
     {
+        $this->primaryKey = [];
         $this->schema = $schema;
         $this->values = array_fill_keys($schema->getFields(), null);
         $this->state = self::STATE_INSERT;
@@ -263,7 +270,11 @@ class Record implements \ArrayAccess
         return array_values($records);
     }
 
-    public function setDatabaseValues(array $row)
+
+    /**
+     * @param array $row
+     */
+    public function setDatabaseValues(array $row): void
     {
         if (array_keys($row) !== array_keys($this->values)) {
             if (array_diff_key($row, $this->values) !== [] || \count($row) !== \count($this->values)) {

@@ -10,6 +10,7 @@ namespace Simply\Database;
  */
 class Model
 {
+    /** @var Record */
     protected $record;
 
     protected function __construct(Record $record)
