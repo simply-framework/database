@@ -19,6 +19,7 @@ class TestPersonModel extends Model
         $record['first_name'] = $firstName;
         $record['last_name'] = $lastName;
         $record['age'] = $age;
+        $record['weight'] = null;
         $record['license'] = false;
 
         parent::__construct($record);

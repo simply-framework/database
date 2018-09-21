@@ -12,21 +12,6 @@ use Psr\Container\ContainerInterface;
  */
 abstract class Schema
 {
-    /** @var string|Model */
-    protected $model;
-
-    /** @var string */
-    protected $table;
-
-    /** @var null|string|string[] */
-    protected $primaryKey;
-
-    /** @var string[] */
-    protected $fields;
-
-    /** @var array[] */
-    protected $relationships = [];
-
     /** @var Relationship[] */
     private $relationshipCache;
 
@@ -39,20 +24,11 @@ abstract class Schema
         $this->container = $container;
     }
 
-    public function getTable(): string
-    {
-        return $this->table;
-    }
-
-    public function getPrimaryKey(): array
-    {
-        return $this->primaryKey === null ? [] : (array) $this->primaryKey;
-    }
-
-    public function getFields(): array
-    {
-        return $this->fields;
-    }
+    abstract public function getModel(): string;
+    abstract public function getTable(): string;
+    abstract public function getPrimaryKey(): array;
+    abstract public function getFields(): array;
+    abstract public function getRelationshipDefinitions(): array;
 
     /**
      * @return Relationship[]
@@ -61,7 +37,7 @@ abstract class Schema
     {
         $relationships = [];
 
-        foreach (array_keys($this->relationships) as $name) {
+        foreach (array_keys($this->getRelationshipDefinitions()) as $name) {
             $relationships[$name] = $this->getRelationship($name);
         }
 
@@ -74,23 +50,23 @@ abstract class Schema
             return $this->relationshipCache[$name];
         }
 
-        if (!isset($this->relationships[$name])) {
+        $definition = $this->getRelationshipDefinitions()[$name] ?? null;
+
+        if (empty($definition)) {
             throw new \InvalidArgumentException("Invalid relationship '$name'");
         }
 
-        $this->relationshipCache[$name] = new Relationship(
-            $name,
-            $this,
-            (array) $this->relationships[$name]['key'],
-            $this->getSchema($this->relationships[$name]['schema']),
-            (array) $this->relationships[$name]['field'],
-            empty($this->relationships[$name]['unique']) ? false : true
-        );
+        $key = \is_array($definition['key']) ? $definition['key'] : [$definition['key']];
+        $schema = $this->loadSchema($definition['schema']);
+        $fields = \is_array($definition['field']) ? $definition['field'] : [$definition['field']];
+        $unique = empty($definition['unique']) ? false : true;
+
+        $this->relationshipCache[$name] = new Relationship($name, $this, $key, $schema, $fields, $unique);
 
         return $this->relationshipCache[$name];
     }
 
-    private function getSchema(string $name): Schema
+    private function loadSchema(string $name): Schema
     {
         return $this->container->get($name);
     }
@@ -129,7 +105,10 @@ abstract class Schema
 
     public function createModel(Record $record): Model
     {
-        return $this->model::createFromDatabaseRecord($record);
+        /** @var Model $model */
+        $model = $this->getModel();
+
+        return $model::createFromDatabaseRecord($record);
     }
 
     public function createModelFromRow(array $row, string $prefix = '', array $relationships = []): Model

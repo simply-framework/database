@@ -3,6 +3,7 @@
 namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
+use Simply\Database\Exception\MissingRecordException;
 
 /**
  * Repository.
@@ -13,7 +14,7 @@ use Simply\Database\Connection\Connection;
 abstract class Repository
 {
     /** @var Connection */
-    private $connection;
+    protected $connection;
 
     public function __construct(Connection $connection)
     {
@@ -109,7 +110,7 @@ abstract class Repository
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
-        $values = $record->getDatabaseValues();
+        $values = array_intersect_key($record->getDatabaseValues(), array_flip($record->getChangedFields()));
 
         $primaryKeys = $schema->getPrimaryKey();
 
@@ -130,13 +131,33 @@ abstract class Repository
         $record->updateState(Record::STATE_INSERT);
     }
 
+    protected function refresh(Model $model): void
+    {
+        $record = $model->getDatabaseRecord();
+        $schema = $record->getSchema();
+
+        $result = $this->connection->select($schema->getFields(), $schema->getTable(), $record->getPrimaryKey());
+        $row = $result->fetch(\PDO::FETCH_ASSOC);
+
+        if (empty($row)) {
+            throw new MissingRecordException('Tried to refresh a record that does not exist in the database');
+        }
+
+        $record->setDatabaseValues($row);
+    }
+
     protected function update(Model $model): void
     {
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
         $values = array_intersect_key($record->getDatabaseValues(), array_flip($record->getChangedFields()));
 
-        $this->connection->update($schema->getTable(), $values, $record->getPrimaryKey());
+        $result = $this->connection->update($schema->getTable(), $values, $record->getPrimaryKey());
+
+        if ($result->rowCount() !== 1) {
+            throw new MissingRecordException('Tried to update a record that does not exist in the database');
+        }
+
         $record->updateState(Record::STATE_UPDATE);
     }
 
@@ -145,7 +166,12 @@ abstract class Repository
         $record = $model->getDatabaseRecord();
         $schema = $record->getSchema();
 
-        $this->connection->delete($schema->getTable(), $record->getPrimaryKey());
+        $result = $this->connection->delete($schema->getTable(), $record->getPrimaryKey());
+
+        if ($result->rowCount() !== 1) {
+            throw new MissingRecordException('Tried to delete a record that does not exist in the database');
+        }
+
         $record->updateState(Record::STATE_DELETE);
     }
 

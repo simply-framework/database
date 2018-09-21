@@ -177,4 +177,9 @@ class TestRepository extends Repository
             ->withSchema($this->houseSchema, 'h')
             ->generateModels('p', ['h' => 'home']);
     }
+
+    public function refreshPerson(TestPersonModel $person): void
+    {
+        $this->refresh($person);
+    }
 }

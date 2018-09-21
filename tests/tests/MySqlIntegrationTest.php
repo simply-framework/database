@@ -53,6 +53,7 @@ CREATE TABLE `$personTable` (
   `license` BOOL DEFAULT FALSE,
   `spouse_id` INT NULL,
   `home_id` INT NULL,
+  CONSTRAINT UNIQUE KEY (`spouse_id`),
   CONSTRAINT FOREIGN KEY (`spouse_id`) REFERENCES `$personTable` (`id`),
   CONSTRAINT FOREIGN KEY (`home_id`) REFERENCES `$houseTable` (`id`)
 )

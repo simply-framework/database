@@ -327,5 +327,9 @@ class Record implements \ArrayAccess
     public function offsetUnset($offset)
     {
         $this->offsetSet($offset, null);
+
+        if ($this->state === self::STATE_INSERT) {
+            unset($this->changed[$offset]);
+        }
     }
 }

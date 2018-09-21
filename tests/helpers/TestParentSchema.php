@@ -2,7 +2,7 @@
 
 namespace Simply\Database\Test;
 
-use Simply\Database\Schema;
+use Simply\Database\StaticSchema;
 
 /**
  * TestParentJoinSchema.
@@ -10,17 +10,17 @@ use Simply\Database\Schema;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class TestParentSchema extends Schema
+class TestParentSchema extends StaticSchema
 {
-    protected $model = TestParentModel::class;
+    protected static $model = TestParentModel::class;
 
-    protected $table = 'phpunit_tests_parent';
+    protected static $table = 'phpunit_tests_parent';
 
-    protected $primaryKey = ['parent_id', 'child_id'];
+    protected static $primaryKey = ['parent_id', 'child_id'];
 
-    protected $fields = ['parent_id', 'child_id'];
+    protected static $fields = ['parent_id', 'child_id'];
 
-    protected $relationships = [
+    protected static $relationships = [
         'child' => [
             'key' => 'child_id',
             'schema' => TestPersonSchema::class,

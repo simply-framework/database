@@ -5,6 +5,7 @@ namespace Simply\Database\Test\TestCase;
 use PHPUnit\Framework\TestCase;
 use Simply\Container\Container;
 use Simply\Database\Connection\Connection;
+use Simply\Database\Exception\MissingRecordException;
 use Simply\Database\Test\TestHouseSchema;
 use Simply\Database\Test\TestParentSchema;
 use Simply\Database\Test\TestPersonModel;
@@ -365,5 +366,62 @@ abstract class IntegrationTestCase extends TestCase
         }
 
         $this->assertSame(4, $count);
+    }
+
+    public function testRefreshingARecords()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $person = $repository->createPerson('Jane', 'Doe', 20);
+        $person->setWeight(70);
+        $repository->savePerson($person);
+
+        $secondInstance = $repository->findByFirstName('Jane')[0];
+        $secondInstance->setWeight(75);
+        $repository->savePerson($secondInstance);
+
+        $repository->refreshPerson($person);
+        $this->assertSame(75.0, $person->getWeight());
+    }
+
+    public function testRefreshingDeletedRecord()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $person = $repository->createPerson('Jane', 'Doe', 20);
+        $repository->savePerson($person);
+
+        $repository->deletePerson($repository->findByFirstName('Jane')[0]);
+
+        $this->expectException(MissingRecordException::class);
+        $repository->refreshPerson($person);
+    }
+
+    public function testUpdatingDeletedRecord()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $person = $repository->createPerson('Jane', 'Doe', 20);
+        $repository->savePerson($person);
+
+        $repository->deletePerson($repository->findByFirstName('Jane')[0]);
+
+        $person->setWeight(70);
+
+        $this->expectException(MissingRecordException::class);
+        $repository->savePerson($person);
+    }
+
+    public function testDeletingDeletedRecord()
+    {
+        $repository = $this->getTestPersonRepository();
+
+        $person = $repository->createPerson('Jane', 'Doe', 20);
+        $repository->savePerson($person);
+
+        $repository->deletePerson($repository->findByFirstName('Jane')[0]);
+
+        $this->expectException(MissingRecordException::class);
+        $repository->deletePerson($person);
     }
 }

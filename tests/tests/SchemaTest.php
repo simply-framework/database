@@ -61,12 +61,12 @@ class SchemaTest extends UnitTestCase
     public function testMissingReverseRelationship(): void
     {
         $container = new Container();
-        $schema = new class($container) extends Schema {
-            protected $model = 'TestModel';
-            protected $primaryKey = 'id';
-            protected $fields = ['id', 'parent_id'];
-            protected $table = 'test';
-            protected $relationships = [
+        $schema = new class($container) extends StaticSchema {
+            protected static $model = 'TestModel';
+            protected static $primaryKey = 'id';
+            protected static $fields = ['id', 'parent_id'];
+            protected static $table = 'test';
+            protected static $relationships = [
                 'parent' => [
                     'key' => 'parent_id',
                     'schema' => 'TestSchema',
@@ -85,12 +85,12 @@ class SchemaTest extends UnitTestCase
     public function testMultipleReverseRelationships(): void
     {
         $container = new Container();
-        $schema = new class($container) extends Schema {
-            protected $model = 'TestModel';
-            protected $primaryKey = 'id';
-            protected $fields = ['id', 'parent_id'];
-            protected $table = 'test';
-            protected $relationships = [
+        $schema = new class($container) extends StaticSchema {
+            protected static $model = 'TestModel';
+            protected static $primaryKey = 'id';
+            protected static $fields = ['id', 'parent_id'];
+            protected static $table = 'test';
+            protected static $relationships = [
                 'parent' => [
                     'key' => 'parent_id',
                     'schema' => 'TestSchema',

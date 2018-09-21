@@ -2,7 +2,7 @@
 
 namespace Simply\Database\Test;
 
-use Simply\Database\Schema;
+use Simply\Database\StaticSchema;
 
 /**
  * TestHouseSchema.
@@ -10,17 +10,17 @@ use Simply\Database\Schema;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-class TestHouseSchema extends Schema
+class TestHouseSchema extends StaticSchema
 {
-    protected $model = TestHouseModel::class;
+    protected static $model = TestHouseModel::class;
 
-    protected $table = 'phpunit_tests_house';
+    protected static $table = 'phpunit_tests_house';
 
-    protected $primaryKey = 'id';
+    protected static $primaryKey = 'id';
 
-    protected $fields = ['id', 'street'];
+    protected static $fields = ['id', 'street'];
 
-    protected $relationships = [
+    protected static $relationships = [
         'residents' => [
             'key' => 'id',
             'schema' => TestPersonSchema::class,

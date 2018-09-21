@@ -135,11 +135,13 @@ class RecordTest extends UnitTestCase
 
         $this->assertSame(1, $person['id']);
         $this->assertTrue(isset($person['id']));
+        $this->assertContains('id', $person->getChangedFields());
 
         unset($person['id']);
 
         $this->assertNull($person['id']);
         $this->assertFalse(isset($person['id']));
+        $this->assertNotContains('id', $person->getChangedFields());
     }
 
     public function testGettingInvalidField(): void
