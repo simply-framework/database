@@ -35,14 +35,15 @@ abstract class Repository
         return $models;
     }
 
-    protected function findOne(Schema $schema, array $conditions): ?Model
+    protected function findOne(Schema $schema, array $conditions, array $order = []): ?Model
     {
-        $keys = $schema->getPrimaryKey();
-        $order = array_fill_keys($keys, Connection::ORDER_ASCENDING);
+        if ($order === []) {
+            $keys = $schema->getPrimaryKey();
+            $order = array_fill_keys($keys, Connection::ORDER_ASCENDING);
+        }
 
         $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions, $order, 1);
-        $result->setFetchMode(\PDO::FETCH_ASSOC);
-        $row = $result->fetch();
+        $row = $result->fetch(\PDO::FETCH_ASSOC);
 
         return $row ? $schema->createModelFromRow($row) : null;
     }
@@ -54,7 +55,16 @@ abstract class Repository
      */
     protected function findByPrimaryKey(Schema $schema, $values): ?Model
     {
-        return $this->findOne($schema, $this->getPrimaryKeyCondition($schema, $values));
+        $conditions = $this->getPrimaryKeyCondition($schema, $values);
+
+        $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions);
+        $rows = $result->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (\count($rows) > 1) {
+            throw new \UnexpectedValueException('Unexpected number of results returned by primary key');
+        }
+
+        return $rows ? $schema->createModelFromRow(reset($rows)) : null;
     }
 
     /**
@@ -62,7 +72,7 @@ abstract class Repository
      * @param mixed $values
      * @return array
      */
-    protected function getPrimaryKeyCondition(Schema $schema, $values): array
+    private function getPrimaryKeyCondition(Schema $schema, $values): array
     {
         $keys = $schema->getPrimaryKey();
         $condition = [];
@@ -137,13 +147,13 @@ abstract class Repository
         $schema = $record->getSchema();
 
         $result = $this->connection->select($schema->getFields(), $schema->getTable(), $record->getPrimaryKey());
-        $row = $result->fetch(\PDO::FETCH_ASSOC);
+        $rows = $result->fetchAll(\PDO::FETCH_ASSOC);
 
-        if (empty($row)) {
+        if (\count($rows) !== 1) {
             throw new MissingRecordException('Tried to refresh a record that does not exist in the database');
         }
 
-        $record->setDatabaseValues($row);
+        $record->setDatabaseValues(reset($rows));
     }
 
     protected function update(Model $model): void

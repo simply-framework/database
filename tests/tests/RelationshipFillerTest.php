@@ -3,6 +3,7 @@
 namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
+use Simply\Database\Exception\InvalidRelationshipException;
 use Simply\Database\Test\TestCase\UnitTestCase;
 
 /**
@@ -56,7 +57,7 @@ class RelationshipFillerTest extends UnitTestCase
         $connection = $this->createMock(Connection::class);
         $filler = new RelationshipFiller($connection);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $filler->fill([$order], ['replaced']);
     }
 

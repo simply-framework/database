@@ -2,6 +2,8 @@
 
 namespace Simply\Database;
 
+use Simply\Database\Exception\InvalidRelationshipException;
+
 /**
  * Relation.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
@@ -113,10 +115,10 @@ class Relationship
 
         if (\count($reverse) !== 1) {
             if (\count($reverse) > 1) {
-                throw new \RuntimeException('Multiple reverse relationship exists for this relationship');
+                throw new InvalidRelationshipException('Multiple reverse relationship exists for this relationship');
             }
 
-            throw new \RuntimeException('No reverse relationship exists for this relationship');
+            throw new InvalidRelationshipException('No reverse relationship exists for this relationship');
         }
 
         return array_pop($reverse);
@@ -137,7 +139,7 @@ class Relationship
     public function fillRelationship(array $records, array $referencedRecords): void
     {
         if (\count($this->getFields()) !== 1) {
-            throw new \RuntimeException('Relationship fill is not supported for composite foreign keys');
+            throw new InvalidRelationshipException('Relationship fill is not supported for composite foreign keys');
         }
 
         if (empty($records)) {
@@ -170,7 +172,7 @@ class Relationship
             }
 
             if ($unique && isset($sorted[$value])) {
-                throw new \InvalidArgumentException('Unique relationship cannot reference more than a single record');
+                throw new InvalidRelationshipException('Multiple records detected for unique relationship');
             }
 
             $sorted[$value][] = $record;
@@ -212,7 +214,7 @@ class Relationship
     public function fillSingleRecord(Record $record, Record $referencedRecord): void
     {
         if (!$this->isUniqueRelationship()) {
-            throw new \LogicException('Only unique relationships can be filled with single records');
+            throw new InvalidRelationshipException('Only unique relationships can be filled with single records');
         }
 
         if ($referencedRecord->isEmpty()) {
@@ -225,7 +227,7 @@ class Relationship
 
         while ($keys) {
             if ((string) $record[array_pop($keys)] !== (string) $referencedRecord[array_pop($fields)]) {
-                throw new \LogicException('Tried to fill a record with a record that is not the referenced record');
+                throw new \InvalidArgumentException('The provided records are not related');
             }
         }
 

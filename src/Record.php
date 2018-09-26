@@ -2,6 +2,8 @@
 
 namespace Simply\Database;
 
+use Simply\Database\Exception\InvalidRelationshipException;
+
 /**
  * Record.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
@@ -132,7 +134,7 @@ class Record implements \ArrayAccess
         $name = $this->getSchema()->getRelationship($name)->getName();
 
         if (!isset($this->referencedRecords[$name])) {
-            throw new \RuntimeException("The referenced records for the relationship '$name' have not been provided");
+            throw new \RuntimeException('The referenced records have not been provided');
         }
 
         return $this->referencedRecords[$name];
@@ -143,7 +145,7 @@ class Record implements \ArrayAccess
         $relationship = $this->getSchema()->getRelationship($name);
 
         if (!$relationship->isUniqueRelationship()) {
-            throw new \InvalidArgumentException('A single model can only be associated to an unique relationships');
+            throw new InvalidRelationshipException('A single model can only be associated to an unique relationships');
         }
 
         $keys = $relationship->getFields();
@@ -151,14 +153,14 @@ class Record implements \ArrayAccess
         $record = $model->getDatabaseRecord();
 
         if ($record->getSchema() !== $relationship->getReferencedSchema()) {
-            throw new \InvalidArgumentException('The associated model has a record with an unexpected schema');
+            throw new \InvalidArgumentException('The associated record belongs to incorrect schema');
         }
 
         while ($keys) {
             $value = $record[array_pop($fields)];
 
             if ($value === null) {
-                throw new \RuntimeException('Cannot associate to models with nulls in referenced fields');
+                throw new \RuntimeException('Cannot associate with models with nulls in referenced fields');
             }
 
             $this[array_pop($keys)] = $value;
@@ -179,7 +181,7 @@ class Record implements \ArrayAccess
         $relationship = $this->getSchema()->getRelationship($name);
 
         if ($relationship->isUniqueRelationship()) {
-            throw new \InvalidArgumentException('Cannot add a new model to an unique relationship');
+            throw new InvalidRelationshipException('Cannot add a new model to an unique relationship');
         }
 
         $model->getDatabaseRecord()->associate($relationship->getReverseRelationship()->getName(), $this->getModel());
@@ -190,7 +192,7 @@ class Record implements \ArrayAccess
         $relationship = $this->getSchema()->getRelationship($name);
 
         if (!$relationship->isUniqueRelationship()) {
-            throw new \RuntimeException('A single related model can only be fetched for an unique relationship');
+            throw new InvalidRelationshipException('A single model can only be fetched for an unique relationship');
         }
 
         $records = $this->getReferencedRecords($name);
@@ -207,7 +209,7 @@ class Record implements \ArrayAccess
         $relationship = $this->getSchema()->getRelationship($name);
 
         if ($relationship->isUniqueRelationship()) {
-            throw new \RuntimeException('Cannot fetch multiple models for an unique relationship');
+            throw new InvalidRelationshipException('Cannot fetch multiple models for an unique relationship');
         }
 
         $models = [];
@@ -225,11 +227,11 @@ class Record implements \ArrayAccess
         $relationship = $proxyRelationship->getReferencedSchema()->getRelationship($name);
 
         if ($proxyRelationship->isUniqueRelationship()) {
-            throw new \RuntimeException('Cannot fetch related models via an unique proxy relationship');
+            throw new InvalidRelationshipException('Cannot fetch models via an unique proxy relationship');
         }
 
         if (!$relationship->isUniqueRelationship()) {
-            throw new \RuntimeException('Related models can only be fetched via proxy with an unique relationship');
+            throw new InvalidRelationshipException('Cannot fetch models via proxy without a unique relationship');
         }
 
         $models = [];

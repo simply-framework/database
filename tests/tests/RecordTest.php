@@ -2,6 +2,7 @@
 
 namespace Simply\Database;
 
+use Simply\Database\Exception\InvalidRelationshipException;
 use Simply\Database\Test\TestCase\UnitTestCase;
 
 /**
@@ -37,7 +38,7 @@ class RecordTest extends UnitTestCase
         $personA = $schema->createRecord();
         $personB = $schema->createRecord();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $personA->associate('parents', $personB->getModel());
     }
 
@@ -70,7 +71,7 @@ class RecordTest extends UnitTestCase
         $personA = $schema->createRecord();
         $personB = $schema->createRecord();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $personA->addAssociation('spouse', $personB->getModel());
     }
 
@@ -101,7 +102,7 @@ class RecordTest extends UnitTestCase
         $schema = $this->getPersonSchema();
         $person = $schema->createRecord();
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $person->getRelatedModel('parents');
     }
 
@@ -120,7 +121,7 @@ class RecordTest extends UnitTestCase
         $schema = $this->getPersonSchema();
         $person = $schema->createRecord();
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $person->getRelatedModels('spouse');
     }
 
@@ -184,7 +185,7 @@ class RecordTest extends UnitTestCase
     {
         $person = $this->getPersonSchema()->createRecord();
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $person->getRelatedModelsByProxy('spouse', 'spouse');
     }
 
@@ -192,7 +193,7 @@ class RecordTest extends UnitTestCase
     {
         $house = $this->getPersonSchema()->getRelationship('home')->getReferencedSchema()->createRecord();
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $house->getRelatedModelsByProxy('residents', 'parents');
     }
 

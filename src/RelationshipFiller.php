@@ -3,6 +3,7 @@
 namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
+use Simply\Database\Exception\InvalidRelationshipException;
 
 /**
  * RelationshipFiller.
@@ -66,7 +67,7 @@ class RelationshipFiller
             $schemaId = $this->getSchemaId($parent);
 
             if (\count($fields) > 1) {
-                throw new \InvalidArgumentException('Filling relationships for composite foreign keys is not supported');
+                throw new InvalidRelationshipException('Composite foreign keys are not supported by batch fill');
             }
 
             $isPrimaryReference = $fields === $parent->getPrimaryKey();

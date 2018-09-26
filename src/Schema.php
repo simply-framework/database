@@ -3,6 +3,7 @@
 namespace Simply\Database;
 
 use Psr\Container\ContainerInterface;
+use Simply\Database\Exception\InvalidRelationshipException;
 
 /**
  * Schema.
@@ -65,7 +66,7 @@ abstract class Schema
         $definition = $this->getRelationshipDefinitions()[$name] ?? null;
 
         if (empty($definition)) {
-            throw new \InvalidArgumentException("Invalid relationship '$name'");
+            throw new InvalidRelationshipException("Undefined relationship '$name'");
         }
 
         $key = \is_array($definition['key']) ? $definition['key'] : [$definition['key']];

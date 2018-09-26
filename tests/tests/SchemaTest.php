@@ -3,6 +3,7 @@
 namespace Simply\Database;
 
 use Simply\Container\Container;
+use Simply\Database\Exception\InvalidRelationshipException;
 use Simply\Database\Test\TestCase\UnitTestCase;
 
 /**
@@ -17,7 +18,7 @@ class SchemaTest extends UnitTestCase
     {
         $schema = $this->getPersonSchema();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $schema->getRelationship('not-a-valid-relationship');
     }
 
@@ -78,7 +79,7 @@ class SchemaTest extends UnitTestCase
         $container['TestSchema'] = $schema;
         $relationship = $schema->getRelationship('parent');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $relationship->getReverseRelationship();
     }
 
@@ -112,7 +113,7 @@ class SchemaTest extends UnitTestCase
         $container['TestSchema'] = $schema;
         $relationship = $schema->getRelationship('parent');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $relationship->getReverseRelationship();
     }
 
@@ -121,7 +122,7 @@ class SchemaTest extends UnitTestCase
         $schema = $this->getCompositeForeignKeySchema();
         $relationship = $schema->getRelationship('replaced');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $relationship->fillRelationship([], []);
     }
 
@@ -162,7 +163,7 @@ class SchemaTest extends UnitTestCase
         $husband = new Record($schema);
         $husband['spouse_id'] = 1;
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $relationship->fillRelationship([$person], [$wife, $husband]);
     }
 
@@ -180,7 +181,7 @@ class SchemaTest extends UnitTestCase
         $husband = $schema->createRecord();
         $husband['id'] = 1;
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRelationshipException::class);
         $relationship->fillRelationship([$person], [$wife, $husband]);
     }
 
