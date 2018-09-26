@@ -18,16 +18,22 @@ use Simply\Database\Test\TestPersonSchema;
  */
 class UnitTestCase extends TestCase
 {
-    protected function getPersonSchema(): TestPersonSchema
+    protected static function initializeContainer(): Container
     {
         $container = new Container();
-        $schema = new TestPersonSchema($container);
 
-        $container[TestPersonSchema::class] = $schema;
+        $container[TestPersonSchema::class] = new TestPersonSchema($container);
         $container[TestParentSchema::class] = new TestParentSchema($container);
         $container[TestHouseSchema::class] = new TestHouseSchema($container);
 
-        return $schema;
+        return $container;
+    }
+
+    protected function getPersonSchema(): TestPersonSchema
+    {
+        $container = static::initializeContainer();
+
+        return $container[TestPersonSchema::class];
     }
 
     protected function getCompositeForeignKeySchema(): Schema

@@ -4,7 +4,12 @@ namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
 use Simply\Database\Connection\MySqlConnection;
+use Simply\Database\Connection\Provider\GenericConnectionProvider;
+use Simply\Database\Connection\Provider\MySqlConnectionProvider;
 use Simply\Database\Test\TestCase\IntegrationTestCase;
+use Simply\Database\Test\TestHouseSchema;
+use Simply\Database\Test\TestParentSchema;
+use Simply\Database\Test\TestPersonSchema;
 
 /**
  * MySqlIntegrationTest.
@@ -14,36 +19,34 @@ use Simply\Database\Test\TestCase\IntegrationTestCase;
  */
 class MySqlIntegrationTest extends IntegrationTestCase
 {
-    protected function createConnection(): Connection
+    protected static function createConnection(): Connection
     {
-        return new MySqlConnection(
+        return new MySqlConnection(new MySqlConnectionProvider(
             $_ENV['phpunit_mysql_hostname'],
             $_ENV['phpunit_mysql_database'],
             $_ENV['phpunit_mysql_username'],
             $_ENV['phpunit_mysql_password']
-        );
+        ));
     }
 
-    protected function setUpDatabase(Connection $connection): void
-    {
-        $queries = [];
+    protected static function createTables(
+        Connection $connection,
+        TestParentSchema $parentSchema,
+        TestPersonSchema $personSchema,
+        TestHouseSchema $houseSchema
+    ): void {
+        self::dropTables($connection, $parentSchema, $personSchema, $houseSchema);
 
-        $personTable = $this->personSchema->getTable();
-        $parentTable = $this->parentSchema->getTable();
-        $houseTable = $this->houseSchema->getTable();
+        $houseTable = $houseSchema->getTable();
+        $personTable = $personSchema->getTable();
+        $parentTable = $parentSchema->getTable();
 
-        $queries[] = "DROP TABLE IF EXISTS `$parentTable`";
-        $queries[] = "DROP TABLE IF EXISTS `$personTable`";
-        $queries[] = "DROP TABLE IF EXISTS `$houseTable`";
-
-        $queries[] = <<<SQL
+        $query = <<<SQL
 CREATE TABLE `$houseTable` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `street` TEXT NOT NULL
-)
-SQL;
+);
 
-        $queries[] = <<<SQL
 CREATE TABLE `$personTable` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `first_name` TEXT NOT NULL,
@@ -56,33 +59,60 @@ CREATE TABLE `$personTable` (
   CONSTRAINT UNIQUE KEY (`spouse_id`),
   CONSTRAINT FOREIGN KEY (`spouse_id`) REFERENCES `$personTable` (`id`),
   CONSTRAINT FOREIGN KEY (`home_id`) REFERENCES `$houseTable` (`id`)
-)
-SQL;
+);
 
-        $queries[] = <<<SQL
 CREATE TABLE `$parentTable` (
   `parent_id` INT NOT NULL,
   `child_id` INT NOT NULL,
   CONSTRAINT PRIMARY KEY (`parent_id`, `child_id`),
   CONSTRAINT FOREIGN KEY (`parent_id`) REFERENCES `$personTable` (`id`),
   CONSTRAINT FOREIGN KEY (`child_id`) REFERENCES `$personTable` (`id`)
-)
+);
 SQL;
 
-        $pdo = $connection->getConnection();
+        $connection->getConnection()->exec($query);
+    }
 
-        foreach ($queries as $query) {
-            $pdo->exec($query);
-        }
+    protected static function dropTables(
+        Connection $connection,
+        TestParentSchema $parentSchema,
+        TestPersonSchema $personSchema,
+        TestHouseSchema $houseSchema
+    ): void {
+        $query = <<<SQL
+DROP TABLE IF EXISTS `{$parentSchema->getTable()}`;
+DROP TABLE IF EXISTS `{$personSchema->getTable()}`;
+DROP TABLE IF EXISTS `{$houseSchema->getTable()}`;
+SQL;
+
+        $connection->getConnection()->exec($query);
+    }
+
+    protected function truncateTables(Connection $connection): void
+    {
+        $query = <<<SQL
+SET FOREIGN_KEY_CHECKS=0;
+TRUNCATE TABLE `{$this->parentSchema->getTable()}`;
+TRUNCATE TABLE `{$this->personSchema->getTable()}`;
+TRUNCATE TABLE `{$this->houseSchema->getTable()}`;
+SET FOREIGN_KEY_CHECKS=1;
+SQL;
+
+        $connection->getConnection()->exec($query);
     }
 
     public function testDSNSupport(): void
     {
-        $method = new \ReflectionMethod($this->connection, 'getDataSource');
-        $method->setAccessible(true);
+        $property = new \ReflectionProperty(GenericConnectionProvider::class, 'dsn');
+        $property->setAccessible(true);
 
-        $this->assertNotContains('port', $method->invoke($this->connection, 'localhost', 'database'));
-        $this->assertContains('port', $method->invoke($this->connection, 'localhost:3306', 'database'));
-        $this->assertContains('unix_socket', $method->invoke($this->connection, '/tmp/mysql.sock', 'database'));
+        $connection = new MySqlConnectionProvider('localhost', 'database', 'username', 'password');
+        $this->assertNotContains('port', $property->getValue($connection));
+
+        $connection = new MySqlConnectionProvider('localhost:3306', 'database', 'username', 'password');
+        $this->assertContains('port', $property->getValue($connection));
+
+        $connection = new MySqlConnectionProvider('/tmp/mysql.sock', 'database', 'username', 'password');
+        $this->assertContains('unix_socket', $property->getValue($connection));
     }
 }

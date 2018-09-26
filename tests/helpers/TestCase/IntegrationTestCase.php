@@ -18,7 +18,7 @@ use Simply\Database\Test\TestRepository;
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
-abstract class IntegrationTestCase extends TestCase
+abstract class IntegrationTestCase extends UnitTestCase
 {
     /** @var Connection */
     protected $connection;
@@ -32,23 +32,60 @@ abstract class IntegrationTestCase extends TestCase
     /** @var TestHouseSchema */
     protected $houseSchema;
 
-    abstract protected function createConnection(): Connection;
-    abstract protected function setUpDatabase(Connection $connection): void;
+    abstract protected static function createConnection(): Connection;
+
+    abstract protected static function createTables(
+        Connection $connection,
+        TestParentSchema $parentSchema,
+        TestPersonSchema $personSchema,
+        TestHouseSchema $houseSchema
+    ): void;
+
+    abstract protected static function dropTables(
+        Connection $connection,
+        TestParentSchema $parentSchema,
+        TestPersonSchema $personSchema,
+        TestHouseSchema $houseSchema
+    ): void;
+
+    abstract protected function truncateTables(Connection $connection): void;
+
+    public static function setUpBeforeClass()
+    {
+        $container = static::initializeContainer();
+        $connection = static::createConnection();
+
+        static::createTables(
+            $connection,
+            $container[TestParentSchema::class],
+            $container[TestPersonSchema::class],
+            $container[TestHouseSchema::class]
+        );
+    }
+
+    public static function tearDownAfterClass()
+    {
+        $container = static::initializeContainer();
+        $connection = static::createConnection();
+
+        static::dropTables(
+            $connection,
+            $container[TestParentSchema::class],
+            $container[TestPersonSchema::class],
+            $container[TestHouseSchema::class]
+        );
+    }
 
     protected function setUp()
     {
-        $container = new Container();
+        $container = static::initializeContainer();
 
-        $this->personSchema = new TestPersonSchema($container);
-        $this->parentSchema = new TestParentSchema($container);
-        $this->houseSchema = new TestHouseSchema($container);
+        $this->personSchema = $container[TestPersonSchema::class];
+        $this->parentSchema = $container[TestParentSchema::class];
+        $this->houseSchema = $container[TestHouseSchema::class];
 
-        $container[TestPersonSchema::class] = $this->personSchema;
-        $container[TestParentSchema::class] = $this->parentSchema;
-        $container[TestHouseSchema::class] = $this->houseSchema;
-
-        $this->connection = $this->createConnection();
-        $this->setUpDatabase($this->connection);
+        $this->connection = static::createConnection();
+        $this->truncateTables($this->connection);
     }
 
     private function getTestPersonRepository(): TestRepository

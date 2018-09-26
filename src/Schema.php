@@ -26,8 +26,20 @@ abstract class Schema
 
     abstract public function getModel(): string;
     abstract public function getTable(): string;
+
+    /**
+     * @return string[]
+     */
     abstract public function getPrimaryKey(): array;
+
+    /**
+     * @return string[]
+     */
     abstract public function getFields(): array;
+
+    /**
+     * @return array[]
+     */
     abstract public function getRelationshipDefinitions(): array;
 
     /**

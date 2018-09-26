@@ -2,6 +2,8 @@
 
 namespace Simply\Database\Connection;
 
+use Simply\Database\Connection\Provider\ConnectionProvider;
+
 /**
  * MySqlConnection.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
@@ -10,46 +12,17 @@ namespace Simply\Database\Connection;
  */
 class MySqlConnection implements Connection
 {
-    /** @var callable */
-    private $lazyLoader;
+    /** @var ConnectionProvider */
+    private $provider;
 
-    /** @var \PDO|null */
-    private $pdo;
-
-    public function __construct(string $hostname, string $database, string $username, string $password)
+    public function __construct(ConnectionProvider $provider)
     {
-        $this->lazyLoader = function () use ($hostname, $database, $username, $password): \PDO {
-            return new \PDO($this->getDataSource($hostname, $database), $username, $password, [
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_EMULATE_PREPARES => false,
-                \PDO::MYSQL_ATTR_INIT_COMMAND => sprintf("SET time_zone = '%s'", date('P')),
-                \PDO::MYSQL_ATTR_FOUND_ROWS => true,
-            ]);
-        };
-    }
-
-    private function getDataSource(string $hostname, string $database): string
-    {
-        if (strncmp($hostname, '/', 1) === 0) {
-            return sprintf('mysql:unix_socket=%s;dbname=%s;charset=utf8mb4', $hostname, $database);
-        }
-
-        $parts = explode(':', $hostname, 2);
-
-        if (\count($parts) === 1) {
-            return sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $hostname, $database);
-        }
-
-        return sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $parts[0], $parts[1], $database);
+        $this->provider = $provider;
     }
 
     public function getConnection(): \PDO
     {
-        if (!$this->pdo) {
-            $this->pdo = ($this->lazyLoader)();
-        }
-
-        return $this->pdo;
+        return $this->provider->getConnection();
     }
 
     public function insert(string $table, array $values, string & $primaryKey = null): \PDOStatement
