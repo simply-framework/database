@@ -3,26 +3,26 @@
 namespace Simply\Database;
 
 /**
- * StaticSchema.
+ * Schema implementation that provides the schema definition via static class properties.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 abstract class StaticSchema extends Schema
 {
-    /** @var string */
+    /** @var string The model class for models associated to the records */
     protected static $model = '';
 
-    /** @var string */
+    /** @var string The name of the table for the schema*/
     protected static $table = '';
 
-    /** @var string[]|string */
+    /** @var string[]|string The primary key field or list of fields the make up the composite primary key */
     protected static $primaryKey = [];
 
-    /** @var string[] */
+    /** @var string[] List of all the fields in the table */
     protected static $fields = [];
 
-    /** @var array[] */
+    /** @var array[] The relationship definitions for the schema */
     protected static $relationships = [];
 
     public function getModel(): string

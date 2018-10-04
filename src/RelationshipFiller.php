@@ -6,19 +6,23 @@ use Simply\Database\Connection\Connection;
 use Simply\Database\Exception\InvalidRelationshipException;
 
 /**
- * RelationshipFiller.
+ * Facilitates filling relationships for multiple records at the same time.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 class RelationshipFiller
 {
-    /** @var Connection */
+    /** @var Connection Connection used to load data for the records from the database */
     private $connection;
 
-    /** @var Record[] */
+    /** @var Record[] Records that are cached during the filling operation */
     private $cache;
 
+    /**
+     * RelationshipFiller constructor.
+     * @param Connection $connection Connection used to load data for the records from the database
+     */
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
@@ -26,8 +30,9 @@ class RelationshipFiller
     }
 
     /**
-     * @param Record[] $records
-     * @param string[] $relationships
+     * Fills the given relationships for all records of a single type.
+     * @param Record[] $records List of records that must all belong to the same schema
+     * @param string[] $relationships List of relationships to fill with deeper levels separated by periods
      */
     public function fill(array $records, array $relationships): void
     {
@@ -52,8 +57,9 @@ class RelationshipFiller
     }
 
     /**
-     * @param Record[] $records
-     * @param string[] $relationships
+     * Fills the relationships for the records.
+     * @param Record[] $records List of records to fill
+     * @param string[] $relationships The relationships to fill for the records
      */
     private function fillRelationships(array $records, array $relationships): void
     {
@@ -113,6 +119,11 @@ class RelationshipFiller
         }
     }
 
+    /**
+     * Parses the list of relationships into associative array of relationships and their children.
+     * @param string[] $relationships List of relationships to parse
+     * @return array[] Associative array of top level relationships and their children
+     */
     private function parseChildRelationships(array $relationships): array
     {
         $childRelationships = [];
@@ -132,6 +143,11 @@ class RelationshipFiller
         return $childRelationships;
     }
 
+    /**
+     * Caches the given record for the schema with given id.
+     * @param int $schemaId Cache id of of the schema
+     * @param Record $record The record to cache
+     */
     private function cacheRecord(int $schemaId, Record $record): void
     {
         $recordId = implode('-', $record->getPrimaryKey());
@@ -143,6 +159,13 @@ class RelationshipFiller
         $this->cache[$schemaId][$recordId] = $record;
     }
 
+    /**
+     * Returns a new or cached record for the given schema and schema id based on the database row.
+     * @param int $schemaId Cache id of of the schema
+     * @param Schema $schema The schema for the record
+     * @param array $row The database row
+     * @return Record A new or cached record based on the database row
+     */
     private function getCachedRecord(int $schemaId, Schema $schema, array $row): Record
     {
         $primaryKey = [];
@@ -162,6 +185,11 @@ class RelationshipFiller
         return $record;
     }
 
+    /**
+     * Returns cache id for the given schema.
+     * @param Schema $schema The schema to use
+     * @return int The cache id for the given schema
+     */
     private function getSchemaId(Schema $schema): int
     {
         return spl_object_id($schema);

@@ -6,21 +6,33 @@ use Simply\Database\Connection\Connection;
 use Simply\Database\Exception\MissingRecordException;
 
 /**
- * Repository.
+ * Provides functionality to perform basic database operations on models.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 abstract class Repository
 {
-    /** @var Connection */
+    /** @var Connection The connection to the database */
     protected $connection;
 
+    /**
+     * Repository constructor.
+     * @param Connection $connection The connection to the database
+     */
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
     }
 
+    /**
+     * Returns a list of models from the database based on given conditions.
+     * @param Schema $schema The schema of the model records
+     * @param array $conditions Conditions for the select query
+     * @param array $order Associative list of fields and sorting directions
+     * @param int|null $limit Maximum number of results to return for ordered query
+     * @return Model[] List of models returned by the database
+     */
     protected function find(Schema $schema, array $conditions, array $order = [], int $limit = null): array
     {
         $result = $this->connection->select($schema->getFields(), $schema->getTable(), $conditions, $order, $limit);
@@ -35,6 +47,13 @@ abstract class Repository
         return $models;
     }
 
+    /**
+     * Returns a single model based on the given conditions
+     * @param Schema $schema The schema of the record to select
+     * @param array $conditions Conditions for the select query
+     * @param array $order The order for the select query
+     * @return Model|null The found model or null if none was found
+     */
     protected function findOne(Schema $schema, array $conditions, array $order = []): ?Model
     {
         if ($order === []) {
@@ -49,9 +68,10 @@ abstract class Repository
     }
 
     /**
-     * @param Schema $schema
-     * @param mixed $values
-     * @return null|Model
+     * Finds a single model based on the primary key.
+     * @param Schema $schema The schema for the selected record
+     * @param mixed $values Value for single primary key field or list of values for composite primary key
+     * @return Model|null The found model or null if none was found
      */
     protected function findByPrimaryKey(Schema $schema, $values): ?Model
     {
@@ -68,9 +88,10 @@ abstract class Repository
     }
 
     /**
-     * @param Schema $schema
-     * @param mixed $values
-     * @return array
+     * Formats the primary key selection condition for the given schema.
+     * @param Schema $schema The schema for the record
+     * @param mixed $values Value or list of values for the primary key
+     * @return array The primary key condition based on the given schema and values
      */
     private function getPrimaryKeyCondition(Schema $schema, $values): array
     {
@@ -100,6 +121,10 @@ abstract class Repository
         return $condition;
     }
 
+    /**
+     * Inserts or updates the given model based on its state.
+     * @param Model $model The model to save
+     */
     protected function save(Model $model): void
     {
         $record = $model->getDatabaseRecord();
@@ -116,6 +141,10 @@ abstract class Repository
         $this->update($model);
     }
 
+    /**
+     * Inserts the given model to the database.
+     * @param Model $model The model to insert
+     */
     protected function insert(Model $model): void
     {
         $record = $model->getDatabaseRecord();
@@ -141,6 +170,10 @@ abstract class Repository
         $record->updateState(Record::STATE_INSERT);
     }
 
+    /**
+     * Updates the field values for the model from the database.
+     * @param Model $model The model that should be updated
+     */
     protected function refresh(Model $model): void
     {
         $record = $model->getDatabaseRecord();
@@ -156,6 +189,10 @@ abstract class Repository
         $record->setDatabaseValues(reset($rows));
     }
 
+    /**
+     * Updates the model in the database.
+     * @param Model $model The model to update
+     */
     protected function update(Model $model): void
     {
         $record = $model->getDatabaseRecord();
@@ -171,6 +208,10 @@ abstract class Repository
         $record->updateState(Record::STATE_UPDATE);
     }
 
+    /**
+     * Deletes the model from the database.
+     * @param Model $model The model to delete
+     */
     protected function delete(Model $model): void
     {
         $record = $model->getDatabaseRecord();
@@ -186,8 +227,9 @@ abstract class Repository
     }
 
     /**
-     * @param Model[] $models
-     * @param string[] $relationships
+     * Fills the given relationships for the given models.
+     * @param Model[] $models The models to fill with relationships
+     * @param string[] $relationships List of relationships to fill for the models
      */
     protected function fillRelationships(array $models, array $relationships): void
     {
@@ -199,6 +241,11 @@ abstract class Repository
         $filler->fill($records, $relationships);
     }
 
+    /**
+     * Returns a custom query object for the given SQL statement.
+     * @param string $sql The sql to use to initialize the query object
+     * @return Query The query object initialized with the connection and the given SQL statement
+     */
     protected function query(string $sql): Query
     {
         return new Query($this->connection, $sql);

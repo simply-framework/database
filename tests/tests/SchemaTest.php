@@ -245,4 +245,13 @@ class SchemaTest extends UnitTestCase
         $this->expectException(\LogicException::class);
         $schema->createModelFromRow($values, 'p_', ['s_' => 'spouse']);
     }
+
+    public function testCreatingModelWithWrongSchema()
+    {
+        $schema = $this->getPersonSchema();
+        $record = $schema->getRelationship('home')->getReferencedSchema()->createRecord();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $schema->createModel($record);
+    }
 }

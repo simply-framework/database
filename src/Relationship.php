@@ -5,34 +5,43 @@ namespace Simply\Database;
 use Simply\Database\Exception\InvalidRelationshipException;
 
 /**
- * Relation.
+ * Represents a relationship between two schemas.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
  * @copyright Copyright (c) 2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 class Relationship
 {
-    /** @var string */
+    /** @var string Name of the relationship */
     private $name;
 
-    /** @var Schema */
+    /** @var Schema The referring schema */
     private $schema;
 
-    /** @var string[] */
+    /** @var string[] The referring fields */
     private $fields;
 
-    /** @var Schema */
+    /** @var Schema The referenced schema */
     private $referencedSchema;
 
-    /** @var string[] */
+    /** @var string[] The referenced fields */
     private $referencedFields;
 
-    /** @var bool */
+    /** @var bool Whether the relationship is unique or not */
     private $unique;
 
-    /** @var Relationship|null */
+    /** @var Relationship|null The reverse relationship or null if not initialized yet */
     private $reverse;
 
+    /**
+     * Relationship constructor.
+     * @param string $name Name of the relationship
+     * @param Schema $schema The referring schema
+     * @param string[] $fields The referring fields
+     * @param Schema $referencedSchema The referenced schema
+     * @param string[] $referencedFields The referenced fields
+     * @param bool $unique Whether the relationship can only reference a single record or not
+     */
     public function __construct(
         string $name,
         Schema $schema,
@@ -65,36 +74,64 @@ class Relationship
         }
     }
 
+    /**
+     * Returns the name of the relationship.
+     * @return string Name of the relationship
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
+    /**
+     * Returns the referring schema.
+     * @return Schema The referring schema
+     */
     public function getSchema(): Schema
     {
         return $this->schema;
     }
 
+    /**
+     * Returns the referring fields.
+     * @return string[] The referring fields
+     */
     public function getFields(): array
     {
         return $this->fields;
     }
 
+    /**
+     * Returns the referenced schema.
+     * @return Schema The referenced schema
+     */
     public function getReferencedSchema(): Schema
     {
         return $this->referencedSchema;
     }
 
+    /**
+     * Returns referenced fields.
+     * @return string[] The referenced fields
+     */
     public function getReferencedFields(): array
     {
         return $this->referencedFields;
     }
 
+    /**
+     * Tells if the relationship is unique or not.
+     * @return bool True if the relationship can only refer to a single record, false otherwise
+     */
     public function isUniqueRelationship(): bool
     {
         return $this->unique;
     }
 
+    /**
+     * Returns the reverse relationship.
+     * @return Relationship The reverse relationship
+     */
     public function getReverseRelationship(): Relationship
     {
         if ($this->reverse === null) {
@@ -104,6 +141,10 @@ class Relationship
         return $this->reverse;
     }
 
+    /**
+     * Detects the reverse relationship in the referenced schema.
+     * @return Relationship The reverse relationship in the referenced schema
+     */
     private function detectReverseRelationship(): Relationship
     {
         $reverse = array_filter(
@@ -124,6 +165,11 @@ class Relationship
         return array_pop($reverse);
     }
 
+    /**
+     * Tells if the given relationship is a reverse relationship to this relationship.
+     * @param Relationship $relationship The relationship to test
+     * @return bool True if the given relationship is a reverse relatinoship, false if not
+     */
     private function isReverseRelationship(Relationship $relationship): bool
     {
         return $relationship->getSchema() === $this->getReferencedSchema()
@@ -133,8 +179,9 @@ class Relationship
     }
 
     /**
-     * @param Record[] $records
-     * @param Record[] $referencedRecords
+     * Fills this relationship for the given records from the list of given records.
+     * @param Record[] $records The records to fill
+     * @param Record[] $referencedRecords All the records referenced by the list of records to fill
      */
     public function fillRelationship(array $records, array $referencedRecords): void
     {
@@ -150,8 +197,9 @@ class Relationship
     }
 
     /**
-     * @param Record[] $records
-     * @return Record[][]
+     * Returns list of records sorted by the value of the referenced field.
+     * @param Record[] $records The list of records to sort
+     * @return Record[][] Lists of records sorted by value of the referenced field
      */
     private function getSortedRecords(array $records): array
     {
@@ -182,8 +230,9 @@ class Relationship
     }
 
     /**
-     * @param Record[] $records
-     * @param Record[][] $sorted
+     * Fills the relationships in given records from the sorted list of records.
+     * @param Record[] $records List of records to fill
+     * @param Record[][] $sorted List of records sorted by the value of the referenced field
      */
     private function assignSortedRecords(array $records, array $sorted): void
     {
@@ -211,6 +260,11 @@ class Relationship
         }
     }
 
+    /**
+     * Fills this unique relationship for a single record.
+     * @param Record $record The record to fill
+     * @param Record $referencedRecord The referenced record
+     */
     public function fillSingleRecord(Record $record, Record $referencedRecord): void
     {
         if (!$this->isUniqueRelationship()) {
