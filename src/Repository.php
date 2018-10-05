@@ -48,7 +48,7 @@ abstract class Repository
     }
 
     /**
-     * Returns a single model based on the given conditions
+     * Returns a single model based on the given conditions.
      * @param Schema $schema The schema of the record to select
      * @param array $conditions Conditions for the select query
      * @param array $order The order for the select query

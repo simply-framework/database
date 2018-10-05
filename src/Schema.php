@@ -31,7 +31,7 @@ abstract class Schema
 
     /**
      * Returns the model class used to operate on the records from this schema.
-     * @return string The model class used to operate on the records from this schema.
+     * @return string The model class used to operate on the records from this schema
      */
     abstract public function getModel(): string;
 
@@ -122,7 +122,7 @@ abstract class Schema
      * @param string $name Name of the schema
      * @return Schema The schema loaded from the container
      */
-    private function loadSchema(string $name): Schema
+    private function loadSchema(string $name): self
     {
         return $this->container->get($name);
     }

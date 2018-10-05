@@ -22,8 +22,8 @@
   },
   "require-dev": {
     "simply/container": "^0.2.1",
-    "phpunit/phpunit": "^7.2",
-    "riimu/php-cs-fixer-config": "^0.1.0",
+    "phpunit/phpunit": "^7.4",
+    "riimu/php-cs-fixer-config": "^0.1.1",
     "riimu/sami-config": "^0.1.0"
   },
   "autoload": {

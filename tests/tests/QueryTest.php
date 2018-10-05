@@ -17,13 +17,23 @@ class QueryTest extends UnitTestCase
 {
     public function testGenerateFromInvalidSchema(): void
     {
-        $query = $this->getQuery('', []);
+        $query = $this->getQuery('SELECT {fields} FROM {table}', []);
 
         $query = $query->withSchema($this->getPersonSchema(), 'person');
         $query = $query->withoutSchemas();
 
         $this->expectException(\InvalidArgumentException::class);
         $query->fetchModels('person');
+    }
+
+    public function testInvalidSchemaAliasOnGenerate(): void
+    {
+        $query = $this->getQuery('SELECT {fields} FROM {table}', []);
+
+        $query = $query->withSchema($this->getPersonSchema(), 'person');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $query->fetchModels('home');
     }
 
     public function testGenerateFromOneSchema(): void
@@ -37,6 +47,16 @@ class QueryTest extends UnitTestCase
 
         $this->assertCount(1, $houses);
         $this->assertSame('Street Name', $houses[0]->getStreet());
+    }
+
+    public function testGenerateRows(): void
+    {
+        $data = [['id' => 1], ['id' => 2]];
+        $rows = $this->getQuery('SELECT id FROM {table}', $data)
+            ->withSchema($this->getPersonSchema())
+            ->generateRows();
+
+        $this->assertSame([['id' => 1], ['id' => 2]], iterator_to_array($rows));
     }
 
     public function testFetchCallback(): void

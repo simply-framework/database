@@ -69,7 +69,7 @@ class MySqlConnection implements Connection
         return $this->query($this->formatQuery([
             'UPDATE' => $this->formatTable($table),
             'SET' => $this->formatAssignments($values, $parameters),
-            'WHERE' => $this->formatConditions($where, $parameters)
+            'WHERE' => $this->formatConditions($where, $parameters),
         ]), $parameters);
     }
 
@@ -308,7 +308,7 @@ class MySqlConnection implements Connection
     }
 
     /**
-     * Binds an SQL query parameter to the PDO statement fo the query
+     * Binds an SQL query parameter to the PDO statement fo the query.
      * @param \PDOStatement $query The PDO statement for binding the value
      * @param int|string $name The name of the placeholder
      * @param mixed $value The value to bind

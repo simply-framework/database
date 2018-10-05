@@ -81,18 +81,18 @@ class TestPersonModel extends Model
         return $this->record->getRelatedModelsByProxy('children', 'child');
     }
 
-    public function marry(TestPersonModel $person): void
+    public function marry(self $person): void
     {
         $this->record->associate('spouse', $person);
         $person->record->associate('spouse', $this);
     }
 
-    public function getSpouse(): ?TestPersonModel
+    public function getSpouse(): ?self
     {
         return $this->record->getRelatedModel('spouse');
     }
 
-    public function getHome(): TestHouseModel
+    public function getHome(): self
     {
         return $this->record->getRelatedModel('home');
     }

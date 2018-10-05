@@ -13,7 +13,7 @@ abstract class StaticSchema extends Schema
     /** @var string The model class for models associated to the records */
     protected static $model = '';
 
-    /** @var string The name of the table for the schema*/
+    /** @var string The name of the table for the schema */
     protected static $table = '';
 
     /** @var string[]|string The primary key field or list of fields the make up the composite primary key */

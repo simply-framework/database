@@ -132,7 +132,7 @@ class Relationship
      * Returns the reverse relationship.
      * @return Relationship The reverse relationship
      */
-    public function getReverseRelationship(): Relationship
+    public function getReverseRelationship(): self
     {
         if ($this->reverse === null) {
             $this->reverse = $this->detectReverseRelationship();
@@ -145,21 +145,17 @@ class Relationship
      * Detects the reverse relationship in the referenced schema.
      * @return Relationship The reverse relationship in the referenced schema
      */
-    private function detectReverseRelationship(): Relationship
+    private function detectReverseRelationship(): self
     {
         $reverse = array_filter(
             $this->referencedSchema->getRelationships(),
-            function (Relationship $relationship): bool {
+            function (self $relationship): bool {
                 return $this->isReverseRelationship($relationship);
             }
         );
 
         if (\count($reverse) !== 1) {
-            if (\count($reverse) > 1) {
-                throw new InvalidRelationshipException('Multiple reverse relationship exists for this relationship');
-            }
-
-            throw new InvalidRelationshipException('No reverse relationship exists for this relationship');
+            throw new InvalidRelationshipException('Could not find a valid reverse relationship');
         }
 
         return array_pop($reverse);
@@ -168,9 +164,9 @@ class Relationship
     /**
      * Tells if the given relationship is a reverse relationship to this relationship.
      * @param Relationship $relationship The relationship to test
-     * @return bool True if the given relationship is a reverse relatinoship, false if not
+     * @return bool True if the given relationship is a reverse relationship, false if not
      */
-    private function isReverseRelationship(Relationship $relationship): bool
+    private function isReverseRelationship(self $relationship): bool
     {
         return $relationship->getSchema() === $this->getReferencedSchema()
             && $relationship->getReferencedSchema() === $this->getSchema()

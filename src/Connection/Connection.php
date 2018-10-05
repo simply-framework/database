@@ -26,7 +26,7 @@ interface Connection
      * Inserts a row the database with given column values.
      * @param string $table Name of the table to insert
      * @param array $values Associative array of column values for the insert
-     * @param string|null $primaryKey Name of automatic primary key column that will be overwritten with its value.
+     * @param string|null $primaryKey Name of automatic primary key column that will be overwritten with its value
      * @return \PDOStatement The resulting PDO statement after executing the query
      */
     public function insert(string $table, array $values, & $primaryKey = null): \PDOStatement;

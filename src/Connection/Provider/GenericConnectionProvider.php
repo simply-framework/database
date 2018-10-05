@@ -51,7 +51,7 @@ class GenericConnectionProvider implements ConnectionProvider
 
     /**
      * Initializes the PDO connection when first requested.
-     * @return \PDO The initialized PDO connection.
+     * @return \PDO The initialized PDO connection
      */
     protected function initializeConnection(): \PDO
     {

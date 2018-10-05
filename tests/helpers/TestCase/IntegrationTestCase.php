@@ -2,8 +2,6 @@
 
 namespace Simply\Database\Test\TestCase;
 
-use PHPUnit\Framework\TestCase;
-use Simply\Container\Container;
 use Simply\Database\Connection\Connection;
 use Simply\Database\Exception\MissingRecordException;
 use Simply\Database\Test\TestHouseSchema;

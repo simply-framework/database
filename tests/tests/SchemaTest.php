@@ -200,7 +200,7 @@ class SchemaTest extends UnitTestCase
 
         $personC = $schema->createRecord();
 
-        $relationship->fillRelationship([$personA, $personB, $personC], [$personA, $personB, $personC]);
+        $relationship->fillRelationship([$personC, $personA, $personB], [$personC, $personA, $personB]);
 
         $this->assertSame([$personB], $personA->getReferencedRecords('spouse'));
         $this->assertSame([$personA], $personB->getReferencedRecords('spouse'));

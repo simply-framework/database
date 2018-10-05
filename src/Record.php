@@ -27,7 +27,7 @@ class Record implements \ArrayAccess
     /** @var array The primary key for the record at the time of retrieving */
     private $primaryKey;
 
-    /** @var array Values for the record fields*/
+    /** @var array Values for the record fields */
     private $values;
 
     /** @var bool[] Associative list of fields for the record that have been modified */
@@ -171,7 +171,7 @@ class Record implements \ArrayAccess
     {
         $name = $this->getSchema()->getRelationship($name)->getName();
 
-        (function (Record ... $records) use ($name): void {
+        (function (self ... $records) use ($name): void {
             $this->referencedRecords[$name] = $records;
         })(... $records);
     }
@@ -250,7 +250,7 @@ class Record implements \ArrayAccess
     }
 
     /**
-     * Returns the model of the referenced record in a unique relationship
+     * Returns the model of the referenced record in a unique relationship.
      * @param string $name Name of the relationship
      * @return Model|null The referenced model, or null if no model is referenced by this record
      */
@@ -350,7 +350,6 @@ class Record implements \ArrayAccess
 
         return array_values($records);
     }
-
 
     /**
      * Sets the values for the fields in the record loaded from the database.

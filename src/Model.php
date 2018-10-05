@@ -27,7 +27,7 @@ class Model
      * @param Record $record The database record for the model
      * @return Model A new initialized model with the given database record
      */
-    public static function createFromDatabaseRecord(Record $record): Model
+    public static function createFromDatabaseRecord(Record $record): self
     {
         /** @var Model $model */
         $model = (new \ReflectionClass(static::class))->newInstanceWithoutConstructor();

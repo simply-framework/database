@@ -212,4 +212,25 @@ class RecordTest extends UnitTestCase
 
         $this->assertSame([], $person->getRelatedModelsByProxy('parents', 'parent'));
     }
+
+    public function testNotAllEmptyProxies(): void
+    {
+        $schema = $this->getPersonSchema();
+        $parentSchema = $schema->getRelationship('parents')->getReferencedSchema();
+
+        $person = $schema->createRecord();
+        $joinA = $parentSchema->createRecord();
+        $joinB = $parentSchema->createRecord();
+
+        $person['id'] = 1;
+        $joinA['child_id'] = 1;
+        $joinB['child_id'] = 1;
+        $joinB['parent_id'] = 1;
+
+        $joinA->setReferencedRecords('parent', []);
+        $joinB->setReferencedRecords('parent', [$person]);
+        $person->setReferencedRecords('parents', [$joinA, $joinB]);
+
+        $this->assertSame([$person->getModel()], $person->getRelatedModelsByProxy('parents', 'parent'));
+    }
 }

@@ -43,7 +43,7 @@ class Query
      * @param string $alias Alias to use for the table in the query
      * @return Query A new query object with the given schema
      */
-    public function withSchema(Schema $schema, string $alias = ''): Query
+    public function withSchema(Schema $schema, string $alias = ''): self
     {
         $query = clone $this;
         $query->schemas[$this->formatAlias($alias)] = $schema;
@@ -56,7 +56,7 @@ class Query
      * @param array $parameters The list of parameters to add
      * @return Query A new query object with the given parameters
      */
-    public function withParameters(array $parameters): Query
+    public function withParameters(array $parameters): self
     {
         $query = clone $this;
 
@@ -76,7 +76,7 @@ class Query
      * Returns a new query object without any schemas.
      * @return Query A new query object without any attached schemas
      */
-    public function withoutSchemas(): Query
+    public function withoutSchemas(): self
     {
         $query = clone $this;
         $query->schemas = [];
@@ -88,7 +88,7 @@ class Query
      * Returns a new query object without any inserted parameters.
      * @return Query A new query object without any inserted parameters
      */
-    public function withoutParameters(): Query
+    public function withoutParameters(): self
     {
         $query = clone $this;
         $query->parameters = [];
