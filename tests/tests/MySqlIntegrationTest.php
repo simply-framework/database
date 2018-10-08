@@ -22,10 +22,10 @@ class MySqlIntegrationTest extends IntegrationTestCase
     protected static function createConnection(): Connection
     {
         return new MySqlConnection(new MySqlConnectionProvider(
-            $_ENV['phpunit_mysql_hostname'],
-            $_ENV['phpunit_mysql_database'],
-            $_ENV['phpunit_mysql_username'],
-            $_ENV['phpunit_mysql_password']
+            $_ENV['PHPUNIT_MYSQL_HOSTNAME'],
+            $_ENV['PHPUNIT_MYSQL_DATABASE'],
+            $_ENV['PHPUNIT_MYSQL_USERNAME'],
+            $_ENV['PHPUNIT_MYSQL_PASSWORD']
         ));
     }
 

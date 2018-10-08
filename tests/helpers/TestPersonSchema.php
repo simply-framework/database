@@ -23,12 +23,12 @@ class TestPersonSchema extends StaticSchema
     protected static $relationships = [
         'parents' => [
             'key' => 'id',
-            'schema' => self::class,
+            'schema' => TestParentSchema::class,
             'field' => 'child_id',
         ],
         'children' => [
             'key' => 'id',
-            'schema' => self::class,
+            'schema' => TestParentSchema::class,
             'field' => 'parent_id',
         ],
         'spouse' => [
@@ -44,7 +44,7 @@ class TestPersonSchema extends StaticSchema
         ],
         'home' => [
             'key' => 'home_id',
-            'schema' => self::class,
+            'schema' => TestHouseSchema::class,
             'field' => 'id',
         ],
     ];

@@ -92,7 +92,7 @@ class TestPersonModel extends Model
         return $this->record->getRelatedModel('spouse');
     }
 
-    public function getHome(): self
+    public function getHome(): TestHouseModel
     {
         return $this->record->getRelatedModel('home');
     }

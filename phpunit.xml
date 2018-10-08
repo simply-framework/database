@@ -11,9 +11,9 @@
         </whitelist>
     </filter>
     <php>
-        <env name="phpunit_mysql_hostname" value="localhost" />
-        <env name="phpunit_mysql_database" value="phpunit_tests" />
-        <env name="phpunit_mysql_username" value="root" />
-        <env name="phpunit_mysql_password" value="toor" />
+        <env name="PHPUNIT_MYSQL_HOSTNAME" value="localhost" />
+        <env name="PHPUNIT_MYSQL_DATABASE" value="phpunit_tests" />
+        <env name="PHPUNIT_MYSQL_USERNAME" value="root" />
+        <env name="PHPUNIT_MYSQL_PASSWORD" value="toor" />
     </php>
 </phpunit>
