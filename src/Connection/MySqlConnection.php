@@ -85,7 +85,7 @@ class MySqlConnection implements Connection
 
     public function formatFields(array $fields, string $table = '', string $prefix = ''): string
     {
-        if (!$fields) {
+        if ($fields === []) {
             throw new \InvalidArgumentException('No fields provided for the query');
         }
 
@@ -130,7 +130,7 @@ class MySqlConnection implements Connection
      */
     private function formatConditions(array $conditions, array & $parameters): string
     {
-        if (!$conditions) {
+        if ($conditions === []) {
             throw new \InvalidArgumentException('No conditions provided for the query');
         }
 
@@ -160,7 +160,7 @@ class MySqlConnection implements Connection
                     return $value !== null;
                 });
 
-                if ($value) {
+                if ($value !== []) {
                     $placeholders = $this->formatParameters($value, $parameters);
                     return "($escaped IN $placeholders OR $escaped IS NULL)";
                 }
@@ -250,7 +250,7 @@ class MySqlConnection implements Connection
      */
     private function formatAssignments(array $values, array & $parameters): string
     {
-        if (!$values) {
+        if ($values === []) {
             throw new \InvalidArgumentException('No values provided for the query');
         }
 
@@ -297,6 +297,10 @@ class MySqlConnection implements Connection
     public function query(string $sql, array $parameters = []): \PDOStatement
     {
         $query = $this->getConnection()->prepare($sql);
+
+        if (! $query instanceof \PDOStatement) {
+            throw new \UnexpectedValueException('Unexpected value returned by prepare query');
+        }
 
         foreach ($parameters as $name => $value) {
             $this->bindQueryParameter($query, \is_int($name) ? $name + 1 : $name, $value);

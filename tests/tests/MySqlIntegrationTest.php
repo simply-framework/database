@@ -4,6 +4,7 @@ namespace Simply\Database;
 
 use Simply\Database\Connection\Connection;
 use Simply\Database\Connection\MySqlConnection;
+use Simply\Database\Connection\Provider\ConnectionProvider;
 use Simply\Database\Connection\Provider\GenericConnectionProvider;
 use Simply\Database\Connection\Provider\MySqlConnectionProvider;
 use Simply\Database\Test\TestCase\IntegrationTestCase;
@@ -114,5 +115,22 @@ SQL;
 
         $connection = new MySqlConnectionProvider('/tmp/mysql.sock', 'database', 'username', 'password');
         $this->assertContains('unix_socket', $property->getValue($connection));
+    }
+
+    public function testHandlingFalsePrepare()
+    {
+        $pdo = $this->getMockBuilder(\PDO::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $pdo->expects($this->once())->method('prepare')->willReturn(false);
+
+        $connection = $this->createMock(ConnectionProvider::class);
+        $connection->method('getConnection')->willReturn($pdo);
+
+        $database = new MySqlConnection($connection);
+
+        $this->expectException(\UnexpectedValueException::class);
+        $database->query('SELECT * FROM `' . $this->personSchema->getTable() . '`');
     }
 }

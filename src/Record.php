@@ -213,7 +213,7 @@ class Record implements \ArrayAccess
             throw new \InvalidArgumentException('The associated record belongs to incorrect schema');
         }
 
-        while ($keys) {
+        while ($keys !== []) {
             $value = $record[array_pop($fields)];
 
             if ($value === null) {

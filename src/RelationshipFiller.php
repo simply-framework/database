@@ -102,7 +102,7 @@ class RelationshipFiller
             $loaded = empty($filled) ? [] : array_merge(... array_values($filled));
             $options = array_keys(array_diff_key($options, $filled));
 
-            if ($options) {
+            if ($options !== []) {
                 $result = $this->connection->select($parent->getFields(), $parent->getTable(), [$field => $options]);
                 $result->setFetchMode(\PDO::FETCH_ASSOC);
 

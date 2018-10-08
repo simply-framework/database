@@ -275,7 +275,7 @@ class Relationship
         $keys = $this->getFields();
         $fields = $this->getReferencedFields();
 
-        while ($keys) {
+        while ($keys !== []) {
             if ((string) $record[array_pop($keys)] !== (string) $referencedRecord[array_pop($fields)]) {
                 throw new \InvalidArgumentException('The provided records are not related');
             }
