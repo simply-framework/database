@@ -9,13 +9,14 @@ cache:
     - build/.composer-cache
 
 env:
-  - PHPUNIT_MYSQL_HOSTNAME="127.0.0.1"
-  - PHPUNIT_MYSQL_DATABASE="travis_test"
-  - PHPUNIT_MYSQL_USERNAME="travis"
-  - PHPUNIT_MYSQL_PASSWORD=""
+  global:
+    - PHPUNIT_MYSQL_HOSTNAME="127.0.0.1"
+    - PHPUNIT_MYSQL_DATABASE="travis_test"
+    - PHPUNIT_MYSQL_USERNAME="travis"
+    - PHPUNIT_MYSQL_PASSWORD=""
 
 before_install:
-  - mysql -e "CREATE DATABASE `travis_test`;"
+  - mysql -e "CREATE DATABASE travis_test;"
   - export COMPOSER_CACHE_DIR="$(pwd)/build/.composer-cache"
   - export XDEBUG="/home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini"
   - mv -v "$XDEBUG" "$XDEBUG.disabled"
