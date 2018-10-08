@@ -4,6 +4,7 @@
   "description": "A minimalistic database abstraction that provides convenience and structure",
   "keywords": [
     "database",
+    "abstraction",
     "orm",
     "framework"
   ],
